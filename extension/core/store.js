@@ -3,7 +3,8 @@
 // Write-through persistence for the non-persistent background, plus a serial queue so
 // events are handled one at a time in arrival order.
 //
-// State (browser.storage.session, key "state"): { mru, session, icons: { [tabId]: url } }
+// State (browser.storage.session, key "state"): { mru, session, icons: { [tabId]: dataUrl } }
+// (Previews are stored beside it under "preview:<tabId>" by core/previews.js.)
 // Settings (browser.storage.local, key "settings"): { overlay, previews, maxItems }
 
 import { normalize as normalizeMru } from "./mru.js";

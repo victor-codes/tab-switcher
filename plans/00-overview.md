@@ -62,7 +62,7 @@ These are facts, not assumptions; design to them.
 - **Opening an extension page fires create → create(`windowId: -1`) → `onReplaced` → `onRemoved`.** Ignore `onCreated` with `windowId: -1`; `onReplaced` moves the old id's MRU position to the new id.
 - **`tab.url` is absent** for empty tabs and for restored tabs that have not loaded. `Item.host` is then `""`; never assume a URL.
 - **No content script → instant empty reply.** `tabs.sendMessage` to such a tab resolves in ~1 ms with `undefined` (no rejection). Treat `undefined` or a rejection as "no content script" and go to fallback at once; the ack timer only guards a slow page.
-- **`tab.favIconUrl` never exists.** Icons come only from `page:meta`.
+- **`tab.favIconUrl` never exists.** Icons come only from `page:meta`, as data URLs (see the message contract).
 - **`captureVisibleTab` works without a user gesture** (7–18 ms; downscale with `createImageBitmap` + `OffscreenCanvas` 3–10 ms; a 320 px JPEG is 2–10 KB). It fails when `tab.url` is absent and returns a blank image while `status` is `loading`.
 - **Module service worker loads**; static imports work. No `window`/`document` in the background.
 - **Safari silently drops a `MacCtrl+Tab` command**, and `commands.update` does not exist.
@@ -93,7 +93,7 @@ Rules: `activated` moves the id to index 0. New background tabs are appended at 
 
 ### Switch session (`core/session.js`)
 
-A session is one hold-and-tap gesture. State: `{ windowId, originTabId, order: number[] /* frozen MRU snapshot */, index, mode: "overlay" | "fallback", startedAt }`.
+A session is one hold-and-tap gesture. State: `{ windowId, originTabId, order: number[] /* frozen MRU snapshot */, index, mode: "pending" | "overlay" | "fallback", startedAt }` (plus bookkeeping fields in `core/session.js`). `pending` means `switcher:show` was sent and its ack has not been processed yet; it becomes `overlay` or `fallback` (or commits) when the ack or the ack timeout arrives. A `pending` session that outlives its ack (the worker died mid-flip) expires after 1000 ms.
 
 ```
 flip command, no session:
@@ -134,10 +134,19 @@ Content → background (`runtime.sendMessage`):
 |---|---|---|
 | `switcher:commit` | `tabId: number` | modifier released, row clicked, or page lost focus while shown |
 | `switcher:cancel` | — | Esc |
-| `page:meta` | `icon: string \| null` (absolute URL of best `<link rel~=icon>`) | sent once at `document_idle` |
-| `data:clear` | — | from the options page: wipe previews, icons and MRU, then re-seed (handler implemented by Agent 4) |
+| `page:meta` | `icon: string \| null` — a `data:image/png;base64,…` URL of at most 8 KB: the page's own best `<link rel~=icon>` (closest to 32 px; else `/favicon.ico`), loaded by that page's content script and redrawn on a 32 px canvas. `null` if it cannot be loaded (CSP, 404), would taint the canvas (cross-origin without CORS) or is too large | sent once after `load`; never from private windows |
 
-`Item = { tabId: number, title: string, host: string, icon: string | null, preview: string | null /* data: URL */ }`. `items` is capped at the setting `maxItems` (default 8) and is in frozen MRU order; `items[0]` is the current tab.
+Extension page → background (`runtime.sendMessage`):
+
+| `type` | Payload | Response |
+|---|---|---|
+| `data:clear` | — | `{ ok: true }` or `{ ok: false, error: string }`; anything else means "not confirmed". Wipes previews, icons and MRU, then re-seeds. Accepted only from the extension's own pages (sender URL under `runtime.getURL("")`, with or without `sender.tab`); ignored from content scripts |
+
+`Item = { tabId: number, title: string, host: string, icon: string | null /* data:image URL only */, preview: string | null /* data:image URL */ }`. `items` is capped at the setting `maxItems` (default 8) and is in frozen MRU order; `items[0]` is the current tab.
+
+**Icons never cause a request (F6).** The background stores an icon only if it is a `data:image/(png|jpeg|gif|webp);base64` URL of at most 8 KB, and the overlay renders an icon only if it starts with `data:image/`; anything else shows the letter glyph. The overlay on site A therefore never loads site B's icon.
+
+**Previews in `switcher:show`.** Previews live in `storage.session` under `preview:<tabId>` (`{ dataUrl, at }`, 480 px wide, top 16:10, JPEG ~0.6, typically 10–30 KB) with a small index `previewIndex` (`{ [tabId]: at }`), capped at 60 entries. The show path reads all previews of the order with one `storage.session.get([...keys])` and waits at most 60 ms for it; if storage is slower, `show` goes out without previews. No `switcher:previews` follow-up message exists.
 
 ### Settings (`browser.storage.local`, key `settings`)
 
