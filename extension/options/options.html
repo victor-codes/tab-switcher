@@ -1,28 +1,80 @@
 <!DOCTYPE html>
 <!-- TabFlip options page. Owner: Agent 3. -->
-<!-- TEMPORARY SPIKE RESULTS VIEW (Agent 0, Phase 0). Revert the probe commit(s) to restore the stub. -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TabFlip spike probes</title>
+  <title>TabFlip Settings</title>
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
-  <main id="app">
-    <h1>TabFlip spike probes</h1>
-    <p class="lede">Temporary test page. Work through the steps in each box below, top to bottom. Results are recorded automatically; when you are done, press <b>Copy results</b> and paste them back to the agent. Only site hosts are recorded, never full addresses or anything you type.</p>
-    <div class="bar">
-      <button id="copy" class="primary">Copy results</button>
-      <button id="refresh">Refresh</button>
-      <button id="reset">Reset results</button>
-      <span id="status" role="status"></span>
-    </div>
-    <p id="bg" class="bgstate"></p>
-    <div id="questions"></div>
-    <h2>Raw results</h2>
-    <p class="hint">If "Copy results" does not work, click inside this box, press Command-A then Command-C.</p>
-    <textarea id="raw" readonly rows="14" spellcheck="false"></textarea>
+  <main>
+    <header class="top">
+      <img src="../images/icon-96.png" alt="" width="48" height="48">
+      <div>
+        <h1>TabFlip</h1>
+        <p class="muted">Switch tabs in most-recently-used order.</p>
+      </div>
+    </header>
+
+    <section aria-labelledby="h-switcher">
+      <h2 id="h-switcher">Switcher</h2>
+      <div class="card">
+        <div class="row">
+          <input type="checkbox" id="overlay" aria-describedby="overlay-desc">
+          <div class="text">
+            <label for="overlay" class="title">Show the switcher on the page</label>
+            <span class="desc" id="overlay-desc">Hold Control and keep tapping the key to see your recent tabs. When off, each tap switches straight away.</span>
+          </div>
+        </div>
+        <div class="row">
+          <input type="checkbox" id="previews" aria-describedby="previews-desc">
+          <div class="text">
+            <label for="previews" class="title">Show page previews</label>
+            <span class="desc" id="previews-desc">Keeps a small picture of each tab on this Mac. Turning this off deletes the stored pictures.</span>
+          </div>
+        </div>
+        <div class="row range">
+          <div class="text">
+            <label for="maxItems" class="title">Tabs shown in the switcher</label>
+            <span class="desc" id="maxItems-desc">Between 4 and 12.</span>
+          </div>
+          <div class="range-control">
+            <input type="range" id="maxItems" aria-describedby="maxItems-desc" min="4" max="12" step="1" value="8">
+            <output id="maxItems-out" for="maxItems" aria-live="polite">8</output>
+          </div>
+        </div>
+      </div>
+      <p class="status" id="save-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section aria-labelledby="h-shortcuts">
+      <h2 id="h-shortcuts">Keyboard shortcuts</h2>
+      <div class="card">
+        <ul class="shortcuts" id="shortcuts">
+          <li class="muted">Loading…</li>
+        </ul>
+      </div>
+      <p class="note">These are the shortcuts Safari reports for TabFlip. Extensions can’t change their own shortcuts in Safari, so TabFlip uses the ones shown here.</p>
+    </section>
+
+    <section aria-labelledby="h-data">
+      <h2 id="h-data">Stored data</h2>
+      <div class="card">
+        <p class="desc flush">TabFlip keeps your recent-tab order, site icons and page previews in Safari’s extension storage on this Mac. Nothing is sent anywhere.</p>
+        <div class="actions" id="clear-start">
+          <button type="button" id="clear">Clear stored previews and history…</button>
+        </div>
+        <div class="actions confirm" id="clear-confirm" hidden>
+          <span id="clear-question">Delete all previews, site icons and recent-tab history?</span>
+          <button type="button" id="clear-yes" class="danger" aria-describedby="clear-question">Clear</button>
+          <button type="button" id="clear-no">Cancel</button>
+        </div>
+        <p class="status" id="clear-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <footer class="muted">Private by design: no network requests, no analytics. Nothing is recorded for private windows.</footer>
   </main>
   <script src="options.js"></script>
 </body>
