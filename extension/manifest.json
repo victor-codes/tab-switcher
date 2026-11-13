@@ -11,16 +11,26 @@
     "256": "images/icon-256.png",
     "512": "images/icon-512.png"
   },
-  "permissions": ["tabs", "storage", "activeTab"],
-  "host_permissions": ["<all_urls>"],
+  "permissions": [
+    "tabs",
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content/switcher.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content/switcher.js"
+      ],
       "run_at": "document_start",
       "all_frames": false
     }
@@ -42,13 +52,6 @@
         "mac": "MacCtrl+W"
       },
       "description": "__MSG_command_close_and_return__"
-    },
-    "probe-ctrl-tab": {
-      "suggested_key": {
-        "default": "Ctrl+Tab",
-        "mac": "MacCtrl+Tab"
-      },
-      "description": "Spike probe only (temporary): does Control-Tab reach the extension?"
     }
   }
 }
