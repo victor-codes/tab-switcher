@@ -1,0 +1,629 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A66738C430A6FD0C0098F1B9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66738C330A6FD0C0098F1B9 /* AppDelegate.swift */; };
+		A66738C830A6FD0D0098F1B9 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = A66738C630A6FD0D0098F1B9 /* Main.html */; };
+		A66738CA30A6FD0D0098F1B9 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = A66738C930A6FD0D0098F1B9 /* Icon.png */; };
+		A66738CC30A6FD0D0098F1B9 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = A66738CB30A6FD0D0098F1B9 /* Style.css */; };
+		A66738CE30A6FD0D0098F1B9 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = A66738CD30A6FD0D0098F1B9 /* Script.js */; };
+		A66738D030A6FD0D0098F1B9 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66738CF30A6FD0D0098F1B9 /* ViewController.swift */; };
+		A66738D330A6FD0D0098F1B9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A66738D130A6FD0D0098F1B9 /* Main.storyboard */; };
+		A66738D530A6FD0E0098F1B9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A66738D430A6FD0E0098F1B9 /* Assets.xcassets */; };
+		A66738DC30A6FD0E0098F1B9 /* TabFlip Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A66738DB30A6FD0E0098F1B9 /* TabFlip Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A66738E130A6FD0E0098F1B9 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66738E030A6FD0E0098F1B9 /* SafariWebExtensionHandler.swift */; };
+		A66738F430A6FD0E0098F1B9 /* options in Resources */ = {isa = PBXBuildFile; fileRef = A66738ED30A6FD0E0098F1B9 /* options */; };
+		A66738F530A6FD0E0098F1B9 /* core in Resources */ = {isa = PBXBuildFile; fileRef = A66738EE30A6FD0E0098F1B9 /* core */; };
+		A66738F630A6FD0E0098F1B9 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = A66738EF30A6FD0E0098F1B9 /* background.js */; };
+		A66738F730A6FD0E0098F1B9 /* images in Resources */ = {isa = PBXBuildFile; fileRef = A66738F030A6FD0E0098F1B9 /* images */; };
+		A66738F830A6FD0E0098F1B9 /* content in Resources */ = {isa = PBXBuildFile; fileRef = A66738F130A6FD0E0098F1B9 /* content */; };
+		A66738F930A6FD0E0098F1B9 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = A66738F230A6FD0E0098F1B9 /* manifest.json */; };
+		A66738FA30A6FD0E0098F1B9 /* _locales in Resources */ = {isa = PBXBuildFile; fileRef = A66738F330A6FD0E0098F1B9 /* _locales */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A66738DD30A6FD0E0098F1B9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A66738B830A6FD0C0098F1B9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A66738DA30A6FD0E0098F1B9;
+			remoteInfo = "TabFlip Extension";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A66738E830A6FD0E0098F1B9 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A66738DC30A6FD0E0098F1B9 /* TabFlip Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		A66738C030A6FD0C0098F1B9 /* TabFlip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TabFlip.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A66738C330A6FD0C0098F1B9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A66738C730A6FD0D0098F1B9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = Base.lproj/Main.html; sourceTree = "<group>"; };
+		A66738C930A6FD0D0098F1B9 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		A66738CB30A6FD0D0098F1B9 /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		A66738CD30A6FD0D0098F1B9 /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		A66738CF30A6FD0D0098F1B9 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		A66738D230A6FD0D0098F1B9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		A66738D430A6FD0E0098F1B9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A66738D630A6FD0E0098F1B9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A66738DB30A6FD0E0098F1B9 /* TabFlip Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "TabFlip Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A66738E030A6FD0E0098F1B9 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		A66738E230A6FD0E0098F1B9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A66738ED30A6FD0E0098F1B9 /* options */ = {isa = PBXFileReference; lastKnownFileType = folder; name = options; path = ../extension/options; sourceTree = "<group>"; };
+		A66738EE30A6FD0E0098F1B9 /* core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = core; path = ../extension/core; sourceTree = "<group>"; };
+		A66738EF30A6FD0E0098F1B9 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.js; path = ../extension/background.js; sourceTree = "<group>"; };
+		A66738F030A6FD0E0098F1B9 /* images */ = {isa = PBXFileReference; lastKnownFileType = folder; name = images; path = ../extension/images; sourceTree = "<group>"; };
+		A66738F130A6FD0E0098F1B9 /* content */ = {isa = PBXFileReference; lastKnownFileType = folder; name = content; path = ../extension/content; sourceTree = "<group>"; };
+		A66738F230A6FD0E0098F1B9 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../extension/manifest.json; sourceTree = "<group>"; };
+		A66738F330A6FD0E0098F1B9 /* _locales */ = {isa = PBXFileReference; lastKnownFileType = folder; name = _locales; path = ../extension/_locales; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A66738BD30A6FD0C0098F1B9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A66738D830A6FD0E0098F1B9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A66738B730A6FD0C0098F1B9 = {
+			isa = PBXGroup;
+			children = (
+				A66738C230A6FD0C0098F1B9 /* TabFlip */,
+				A66738DF30A6FD0E0098F1B9 /* TabFlip Extension */,
+				A66738C130A6FD0C0098F1B9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A66738C130A6FD0C0098F1B9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A66738C030A6FD0C0098F1B9 /* TabFlip.app */,
+				A66738DB30A6FD0E0098F1B9 /* TabFlip Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A66738C230A6FD0C0098F1B9 /* TabFlip */ = {
+			isa = PBXGroup;
+			children = (
+				A66738C330A6FD0C0098F1B9 /* AppDelegate.swift */,
+				A66738CF30A6FD0D0098F1B9 /* ViewController.swift */,
+				A66738D130A6FD0D0098F1B9 /* Main.storyboard */,
+				A66738D430A6FD0E0098F1B9 /* Assets.xcassets */,
+				A66738D630A6FD0E0098F1B9 /* Info.plist */,
+				A66738C530A6FD0C0098F1B9 /* Resources */,
+			);
+			path = TabFlip;
+			sourceTree = "<group>";
+		};
+		A66738C530A6FD0C0098F1B9 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A66738C630A6FD0D0098F1B9 /* Main.html */,
+				A66738C930A6FD0D0098F1B9 /* Icon.png */,
+				A66738CB30A6FD0D0098F1B9 /* Style.css */,
+				A66738CD30A6FD0D0098F1B9 /* Script.js */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A66738DF30A6FD0E0098F1B9 /* TabFlip Extension */ = {
+			isa = PBXGroup;
+			children = (
+				A66738EC30A6FD0E0098F1B9 /* Resources */,
+				A66738E030A6FD0E0098F1B9 /* SafariWebExtensionHandler.swift */,
+				A66738E230A6FD0E0098F1B9 /* Info.plist */,
+			);
+			path = "TabFlip Extension";
+			sourceTree = "<group>";
+		};
+		A66738EC30A6FD0E0098F1B9 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A66738ED30A6FD0E0098F1B9 /* options */,
+				A66738EE30A6FD0E0098F1B9 /* core */,
+				A66738EF30A6FD0E0098F1B9 /* background.js */,
+				A66738F030A6FD0E0098F1B9 /* images */,
+				A66738F130A6FD0E0098F1B9 /* content */,
+				A66738F230A6FD0E0098F1B9 /* manifest.json */,
+				A66738F330A6FD0E0098F1B9 /* _locales */,
+			);
+			name = Resources;
+			path = "TabFlip Extension";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A66738BF30A6FD0C0098F1B9 /* TabFlip */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A66738E930A6FD0E0098F1B9 /* Build configuration list for PBXNativeTarget "TabFlip" */;
+			buildPhases = (
+				A66738BC30A6FD0C0098F1B9 /* Sources */,
+				A66738BD30A6FD0C0098F1B9 /* Frameworks */,
+				A66738BE30A6FD0C0098F1B9 /* Resources */,
+				A66738E830A6FD0E0098F1B9 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A66738DE30A6FD0E0098F1B9 /* PBXTargetDependency */,
+			);
+			name = TabFlip;
+			packageProductDependencies = (
+			);
+			productName = TabFlip;
+			productReference = A66738C030A6FD0C0098F1B9 /* TabFlip.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A66738DA30A6FD0E0098F1B9 /* TabFlip Extension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A66738E530A6FD0E0098F1B9 /* Build configuration list for PBXNativeTarget "TabFlip Extension" */;
+			buildPhases = (
+				A66738D730A6FD0E0098F1B9 /* Sources */,
+				A66738D830A6FD0E0098F1B9 /* Frameworks */,
+				A66738D930A6FD0E0098F1B9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "TabFlip Extension";
+			packageProductDependencies = (
+			);
+			productName = "TabFlip Extension";
+			productReference = A66738DB30A6FD0E0098F1B9 /* TabFlip Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A66738B830A6FD0C0098F1B9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2620;
+				LastUpgradeCheck = 2620;
+				TargetAttributes = {
+					A66738BF30A6FD0C0098F1B9 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					A66738DA30A6FD0E0098F1B9 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+				};
+			};
+			buildConfigurationList = A66738BB30A6FD0C0098F1B9 /* Build configuration list for PBXProject "TabFlip" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A66738B730A6FD0C0098F1B9;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A66738C130A6FD0C0098F1B9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A66738BF30A6FD0C0098F1B9 /* TabFlip */,
+				A66738DA30A6FD0E0098F1B9 /* TabFlip Extension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A66738BE30A6FD0C0098F1B9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A66738CA30A6FD0D0098F1B9 /* Icon.png in Resources */,
+				A66738D330A6FD0D0098F1B9 /* Main.storyboard in Resources */,
+				A66738CE30A6FD0D0098F1B9 /* Script.js in Resources */,
+				A66738C830A6FD0D0098F1B9 /* Main.html in Resources */,
+				A66738D530A6FD0E0098F1B9 /* Assets.xcassets in Resources */,
+				A66738CC30A6FD0D0098F1B9 /* Style.css in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A66738D930A6FD0E0098F1B9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A66738F730A6FD0E0098F1B9 /* images in Resources */,
+				A66738F430A6FD0E0098F1B9 /* options in Resources */,
+				A66738F630A6FD0E0098F1B9 /* background.js in Resources */,
+				A66738F530A6FD0E0098F1B9 /* core in Resources */,
+				A66738F930A6FD0E0098F1B9 /* manifest.json in Resources */,
+				A66738FA30A6FD0E0098F1B9 /* _locales in Resources */,
+				A66738F830A6FD0E0098F1B9 /* content in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A66738BC30A6FD0C0098F1B9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A66738D030A6FD0D0098F1B9 /* ViewController.swift in Sources */,
+				A66738C430A6FD0C0098F1B9 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A66738D730A6FD0E0098F1B9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A66738E130A6FD0E0098F1B9 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A66738DE30A6FD0E0098F1B9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A66738DA30A6FD0E0098F1B9 /* TabFlip Extension */;
+			targetProxy = A66738DD30A6FD0E0098F1B9 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		A66738C630A6FD0D0098F1B9 /* Main.html */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A66738C730A6FD0D0098F1B9 /* Base */,
+			);
+			name = Main.html;
+			sourceTree = "<group>";
+		};
+		A66738D130A6FD0D0098F1B9 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A66738D230A6FD0D0098F1B9 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		A66738E330A6FD0E0098F1B9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A66738E430A6FD0E0098F1B9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		A66738E630A6FD0E0098F1B9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "TabFlip Extension/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TabFlip Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.tabflip.Extension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A66738E730A6FD0E0098F1B9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "TabFlip Extension/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TabFlip Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.tabflip.Extension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A66738EA30A6FD0E0098F1B9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TabFlip/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TabFlip;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.tabflip;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A66738EB30A6FD0E0098F1B9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TabFlip/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TabFlip;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.tabflip;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A66738BB30A6FD0C0098F1B9 /* Build configuration list for PBXProject "TabFlip" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A66738E330A6FD0E0098F1B9 /* Debug */,
+				A66738E430A6FD0E0098F1B9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A66738E530A6FD0E0098F1B9 /* Build configuration list for PBXNativeTarget "TabFlip Extension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A66738E630A6FD0E0098F1B9 /* Debug */,
+				A66738E730A6FD0E0098F1B9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A66738E930A6FD0E0098F1B9 /* Build configuration list for PBXNativeTarget "TabFlip" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A66738EA30A6FD0E0098F1B9 /* Debug */,
+				A66738EB30A6FD0E0098F1B9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A66738B830A6FD0C0098F1B9 /* Project object */;
+}
