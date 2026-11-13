@@ -7,7 +7,8 @@
 //      focus and the modifiers are still held), updates it on `switcher:move`,
 //      removes it on `switcher:hide`, and reports `switcher:commit` /
 //      `switcher:cancel` back to the background.
-//   3. Sends `page:meta` (best icon URL) once the page has loaded.
+//   3. Sends `page:meta` once the page has loaded: this page's own icon, redrawn as a
+//      small data:image URL (or null), so no overlay ever loads an icon from the network.
 //
 // Replies always use the returned-Promise style (both styles work in Safari;
 // this file uses only one).
@@ -24,6 +25,10 @@
   // ---------------------------------------------------------------------------
 
   const MODIFIERS = ["Control", "Alt", "Shift", "Meta"];
+  /** page:meta icons: drawn at this size, sent only if the data URL is at most ICON_MAX_CHARS. */
+  const ICON_PX = 32;
+  const ICON_MAX_CHARS = 8192;
+  const ICON_WAIT_MS = 3000;
   const MODIFIER_ALIASES = {
     control: "Control",
     ctrl: "Control",
@@ -60,8 +65,16 @@
     return typeof u === "string" && /^data:image\//i.test(u) ? u : null;
   }
 
-  /** An icon may be https:, http: or data:image/. Returns a normalised URL or null. */
+  /**
+   * An icon shown in the overlay may only be a data:image URL: the overlay on one site
+   * must never make a request to another site (F6). Anything else -> null (letter glyph).
+   */
   function safeIcon(u) {
+    return typeof u === "string" && /^data:image\//i.test(u) ? u : null;
+  }
+
+  /** A candidate icon link of this page: http(s) or data:image/. Normalised URL or null. */
+  function iconSource(u) {
     if (typeof u !== "string" || !u) return null;
     if (/^data:image\//i.test(u)) return u;
     try {
@@ -97,9 +110,21 @@
   }
 
   /**
+   * Rank a `sizes` value for a 32 px icon: the smallest edge >= 32 wins, then vector
+   * ("any"), then the largest edge below 32 (unknown sizes rank lowest).
+   */
+  function iconScore(sizes) {
+    const s = largestSize(sizes);
+    if (s >= 1e6) return 5000;
+    if (s >= ICON_PX) return 10000 - Math.min(s, 4999);
+    return s;
+  }
+
+  /**
    * Choose the best icon from candidate links: [{ rel, href, sizes }] where
-   * href is already absolute. Prefer rel~=icon with the largest sizes, then
-   * apple-touch-icon, else null.
+   * href is already absolute (http(s) or data:image/). Prefer rel~=icon closest to
+   * 32 px, then apple-touch-icon, else null. The result is only ever loaded by this
+   * page's own content script and turned into a data URL (see iconToDataUrl).
    */
   function pickIcon(links) {
     let best = null;
@@ -108,9 +133,9 @@
       for (const l of links) {
         const rels = String(l.rel || "").toLowerCase().split(/\s+/);
         if (!rels.includes(tier)) continue;
-        const href = safeIcon(l.href);
-        if (!href || /^data:/i.test(href)) continue; // only absolute http(s) per contract
-        const score = largestSize(l.sizes);
+        const href = iconSource(l.href);
+        if (!href) continue;
+        const score = iconScore(l.sizes);
         if (score > bestScore) {
           best = href;
           bestScore = score;
@@ -121,7 +146,7 @@
     return null;
   }
 
-  const pure = { normalizeModifiers, wrapIndex, safePreview, safeIcon, sanitizeItem, largestSize, pickIcon };
+  const pure = { normalizeModifiers, wrapIndex, safePreview, safeIcon, iconSource, sanitizeItem, largestSize, iconScore, pickIcon };
 
   // ---------------------------------------------------------------------------
   // Passive modifier tracking
@@ -613,7 +638,67 @@
   // page:meta — once, after load (document_idle equivalent)
   // ---------------------------------------------------------------------------
 
-  function sendMeta() {
+  /**
+   * Load this page's own icon and redraw it as a 32 px PNG data URL, so the overlay on
+   * another site can show it without any request (F6). Resolves to null when the icon
+   * cannot be loaded (page CSP img-src, 404), would taint the canvas (cross-origin
+   * without CORS), or is too large.
+   */
+  function iconToDataUrl(href) {
+    return new Promise((resolve) => {
+      let done = false;
+      let timer = 0;
+      const finish = (v) => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        resolve(v);
+      };
+      timer = setTimeout(() => finish(null), ICON_WAIT_MS);
+      try {
+        const im = new Image();
+        if (!/^data:/i.test(href) && new URL(href).origin !== location.origin) {
+          im.crossOrigin = "anonymous"; // without CORS the canvas would be tainted anyway
+        }
+        im.decoding = "async";
+        im.onerror = () => finish(null);
+        im.onload = () => {
+          try {
+            const w = im.naturalWidth || ICON_PX;
+            const h = im.naturalHeight || ICON_PX;
+            const scale = ICON_PX / Math.max(w, h);
+            const dw = Math.max(1, Math.round(w * scale));
+            const dh = Math.max(1, Math.round(h * scale));
+            const c = document.createElement("canvas");
+            c.width = ICON_PX;
+            c.height = ICON_PX;
+            const g = c.getContext("2d");
+            if (!g) return finish(null);
+            g.drawImage(im, (ICON_PX - dw) / 2, (ICON_PX - dh) / 2, dw, dh);
+            const url = c.toDataURL("image/png"); // throws SecurityError if tainted
+            finish(/^data:image\/png;base64,/.test(url) && url.length <= ICON_MAX_CHARS ? url : null);
+          } catch (e) {
+            finish(null);
+          }
+        };
+        im.src = href;
+      } catch (e) {
+        finish(null);
+      }
+    });
+  }
+
+  /** This page's icon candidates; falls back to /favicon.ico, which Safari requests anyway. */
+  function iconCandidates() {
+    const links = Array.from(document.querySelectorAll('link[rel~="icon" i], link[rel~="apple-touch-icon" i]')).map(
+      (l) => ({ rel: l.getAttribute("rel"), href: l.href, sizes: l.getAttribute("sizes") })
+    );
+    const best = pickIcon(links);
+    if (best) return best;
+    return location.protocol === "https:" || location.protocol === "http:" ? location.origin + "/favicon.ico" : null;
+  }
+
+  async function sendMeta() {
     try {
       if (browser.extension && browser.extension.inIncognitoContext) return; // private window
     } catch (e) {
@@ -621,10 +706,8 @@
     }
     let icon = null;
     try {
-      const links = Array.from(document.querySelectorAll('link[rel~="icon" i], link[rel~="apple-touch-icon" i]')).map(
-        (l) => ({ rel: l.getAttribute("rel"), href: l.href, sizes: l.getAttribute("sizes") })
-      );
-      icon = pickIcon(links);
+      const href = iconCandidates();
+      icon = href ? await iconToDataUrl(href) : null;
     } catch (e) {
       icon = null;
     }
@@ -638,6 +721,7 @@
   if (typeof globalThis.__tabflipTestHook === "function") {
     globalThis.__tabflipTestHook({
       pure,
+      iconToDataUrl,
       state: () => ({
         active: !!session,
         index: session ? session.index : null,
