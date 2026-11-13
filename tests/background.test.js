@@ -50,11 +50,13 @@ const ICON_A = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFc
  * `content`: { [tabId]: (msg) => reply | "reject" | "hang" } — tabs without an entry have
  * no content script and answer sendMessage with undefined, as measured.
  */
-function fakeBrowser({ tabs, content = {}, sessionData = {}, localData = {} }) {
+function fakeBrowser({ tabs, content = {}, sessionData = {}, localData = {}, app }) {
   const b = {
     _tabs: tabs.map((t) => ({ ...t })),
     _focused: tabs[0]?.windowId ?? 1,
     _sent: [],
+    _ports: [],
+    _helper: { onMessage: event(), onDisconnect: event() },
     _content: content,
     storage: { session: area(sessionData), local: area(localData), onChanged: event() },
     runtime: {
@@ -63,8 +65,12 @@ function fakeBrowser({ tabs, content = {}, sessionData = {}, localData = {} }) {
       onStartup: event(),
       onInstalled: event(),
       onMessage: event(),
+      ...(app ? { sendNativeMessage: async (_id, msg) => (app.calls.push(msg), app.reply()) } : {}),
+      connectNative(id) {
+        b._ports.push(id);
+        return b._helper;
+      },
     },
-    commands: { onCommand: event() },
     windows: { onRemoved: event(), onFocusChanged: event() },
     tabs: {
       onActivated: event(),
@@ -122,9 +128,13 @@ function fakeBrowser({ tabs, content = {}, sessionData = {}, localData = {} }) {
     tab(id) {
       return { ...b._tabs.find((t) => t.id === id) };
     },
-    command(name, windowId = b._focused) {
-      const active = b._tabs.find((t) => t.windowId === windowId && t.active);
-      b.commands.onCommand.fire(name, { ...active });
+    /** The app: a shortcut press (dir 1 = next, -1 = previous). */
+    press(dir = 1) {
+      b._helper.onMessage.fire({ name: "flip", userInfo: { dir } });
+    },
+    /** The app: the held modifier was let go. */
+    release() {
+      b._helper.onMessage.fire({ name: "release", userInfo: {} });
     },
     message(msg, fromTabId) {
       b.runtime.onMessage.fire(msg, { id: "tabflip", tab: b.tab(fromTabId) });
@@ -167,7 +177,7 @@ test("registers every listener synchronously at load", async () => {
   const b = fakeBrowser({ tabs: threeTabs() });
   await boot(b);
   for (const ev of [
-    b.commands.onCommand, b.tabs.onActivated, b.tabs.onCreated, b.tabs.onRemoved, b.tabs.onReplaced,
+    b._helper.onMessage, b.tabs.onActivated, b.tabs.onCreated, b.tabs.onRemoved, b.tabs.onReplaced,
     b.tabs.onAttached, b.tabs.onDetached, b.windows.onRemoved, b.windows.onFocusChanged,
     b.runtime.onStartup, b.runtime.onInstalled, b.runtime.onMessage,
     b.tabs.onUpdated, b.storage.onChanged,
@@ -179,7 +189,7 @@ test("registers every listener synchronously at load", async () => {
 test("fallback (no content script): flip A->B, then A again after the idle window (lazy expiry)", async () => {
   const b = fakeBrowser({ tabs: threeTabs() });
   const { settle } = await boot(b);
-  b.command("flip");
+  b.press();
   await settle();
   assert.equal(b.activeId(), 2);
   assert.equal(b.session().mode, "fallback");
@@ -187,18 +197,39 @@ test("fallback (no content script): flip A->B, then A again after the idle windo
   assert.deepEqual(b._sent.map((s) => s.msg.type), ["switcher:show"]);
 
   clockOffset += 5000; // the idle timer is irrelevant now: lazy expiry handles it
-  b.command("flip");
+  b.press();
   await settle();
   assert.equal(b.activeId(), 1);
   assert.deepEqual(b.session().order, [2, 1, 3]);
 });
 
+test("the helper's port: a press opens the switcher and release commits", async () => {
+  const content = { 1: (msg) => (msg.type === "switcher:show" ? { ok: true, hasFocus: true, modifiersHeld: true } : undefined) };
+  const b = fakeBrowser({ tabs: threeTabs(), content });
+  const { settle } = await boot(b);
+  assert.deepEqual(b._ports, ["application.id"], "connects once at load");
+  b.press();
+  await settle();
+  assert.equal(b.session().mode, "overlay");
+  b.press(-1); // back to the oldest shown
+  await settle();
+  assert.equal(b.session().index, 0);
+  b.press();
+  b.press();
+  await settle();
+  b.release();
+  await settle();
+  assert.equal(b.session(), null);
+  assert.equal(b.activeId(), 3);
+  assert.deepEqual(b._sent.map((s) => s.msg.type).at(-1), "switcher:hide");
+});
+
 test("fallback: the 1000 ms idle timer ends the session and promotes the final tab", async () => {
   const b = fakeBrowser({ tabs: threeTabs() });
   const { settle } = await boot(b);
-  b.command("flip");
+  b.press();
   await settle();
-  b.command("flip");
+  b.press();
   await settle();
   assert.equal(b.activeId(), 3);
   assert.deepEqual(b.mru(), [1, 2, 3]);
@@ -222,7 +253,7 @@ test("overlay: show items, move, commit from the content script", async () => {
   await settle();
   b.message({ type: "page:meta", icon: ICON_A }, 2);
   await settle();
-  b.command("flip");
+  b.press();
   await settle();
   const show = replies[0];
   assert.equal(show.type, "switcher:show");
@@ -234,7 +265,7 @@ test("overlay: show items, move, commit from the content script", async () => {
     { tabId: 3, title: "Three", host: "", icon: null, preview: null },
   ]);
   assert.equal(b.activeId(), 1, "overlay mode does not switch yet");
-  b.command("flip");
+  b.press();
   await settle();
   assert.deepEqual(replies[1], { type: "switcher:move", selectedIndex: 2 });
   b.message({ type: "switcher:commit", tabId: 3 }, 1);
@@ -251,11 +282,11 @@ test("quick tap with a content script commits at once and F1 returns", async () 
   };
   const b = fakeBrowser({ tabs: threeTabs(), content });
   const { settle } = await boot(b);
-  b.command("flip");
+  b.press();
   await settle();
   assert.equal(b.activeId(), 2);
   assert.deepEqual(b.mru(), [2, 1, 3]);
-  b.command("flip");
+  b.press();
   await settle();
   assert.equal(b.activeId(), 1);
   assert.deepEqual(b.mru(), [1, 2, 3]);
@@ -265,7 +296,7 @@ test("ack hasFocus:false goes to fallback", async () => {
   const content = { 1: (m) => (m.type === "switcher:show" ? { ok: true, hasFocus: false, modifiersHeld: true } : { ok: true }) };
   const b = fakeBrowser({ tabs: threeTabs(), content });
   const { settle } = await boot(b);
-  b.command("flip");
+  b.press();
   await settle();
   assert.equal(b.activeId(), 2);
   assert.equal(b.session().mode, "fallback");
@@ -276,7 +307,7 @@ test("rejected sendMessage and a hung page both go to fallback", async () => {
     const b = fakeBrowser({ tabs: threeTabs(), content: { 1: () => reply } });
     const { settle } = await boot(b);
     const t0 = realNow();
-    b.command("flip");
+    b.press();
     await settle();
     if (reply === "hang") await sleep(200);
     await settle();
@@ -284,30 +315,6 @@ test("rejected sendMessage and a hung page both go to fallback", async () => {
     assert.equal(b.session().mode, "fallback", reply);
     if (reply === "reject") assert.ok(realNow() - t0 < 140, "no waiting for the ack timer");
   }
-});
-
-test("close-and-return activates the previous MRU tab, not the neighbour", async () => {
-  const tabs = [
-    { id: 1, windowId: 1, url: "https://a.example/", active: false },
-    { id: 2, windowId: 1, url: "https://b.example/", active: true },
-    { id: 3, windowId: 1, url: "https://c.example/", active: false },
-    { id: 4, windowId: 1, url: "https://d.example/", active: false },
-  ];
-  const b = fakeBrowser({ tabs });
-  const { settle } = await boot(b);
-  b.runtime.onStartup.fire();
-  await settle();
-  assert.deepEqual(b.mru(), [2, 1, 3, 4], "seeded: active first, then tab-strip order");
-  await b.tabs.update(4, { active: true });
-  await settle();
-  await b.tabs.update(3, { active: true });
-  await settle();
-  assert.deepEqual(b.mru(), [3, 4, 2, 1]);
-  b.command("close-and-return");
-  await settle();
-  assert.equal(b.activeId(), 4);
-  assert.equal(b._tabs.some((t) => t.id === 3), false);
-  assert.deepEqual(b.mru(), [4, 2, 1]);
 });
 
 test("wake with persisted state uses the stored MRU, not a fresh seed", async () => {
@@ -324,10 +331,10 @@ test("wake with persisted state uses the stored MRU, not a fresh seed", async ()
   await one.settle();
   assert.deepEqual(first.mru(), [3, 2, 1]); // a seed would give [3, 1, 2]
 
-  // Worker stopped; a new instance wakes on the command with the same storage.session.
+  // Worker stopped; a new instance wakes on a shortcut press with the same storage.session.
   const second = fakeBrowser({ tabs: first._tabs, sessionData });
   const two = await boot(second);
-  second.command("flip");
+  second.press();
   await two.settle();
   assert.equal(second.activeId(), 2);
 });
@@ -336,9 +343,9 @@ test("cold start across a fallback session: the MRU ends up correct without the 
   const sessionData = {};
   const first = fakeBrowser({ tabs: threeTabs(), sessionData, localData: { settings: { overlay: false } } });
   const one = await boot(first);
-  first.command("flip");
+  first.press();
   await one.settle();
-  first.command("flip");
+  first.press();
   await one.settle();
   assert.equal(first.activeId(), 3);
   // The worker is stopped before its idle timer fires; the timer of instance one is ignored
@@ -380,7 +387,7 @@ test("multi-window: MRU per window, flip acts on the focused window only", async
   await settle();
   b._focused = 2;
   b.windows.onFocusChanged.fire(2);
-  b.command("flip");
+  b.press();
   await settle();
   assert.equal(b.activeId(2), 22);
   assert.equal(b.activeId(1), 1);
@@ -519,7 +526,7 @@ test("switcher:show carries stored previews (one batched read) and none when pre
   const { settle } = await boot(b);
   await settle();
   gets.length = 0;
-  b.command("flip");
+  b.press();
   await settle();
   assert.deepEqual(replies[0].items.map((i) => i.preview), [null, "data:image/jpeg;base64,QUJD", null]);
   assert.equal(gets.filter((k) => Array.isArray(k)).length, 1, "one storage.get for all previews");
@@ -527,7 +534,46 @@ test("switcher:show carries stored previews (one batched read) and none when pre
   const b2 = fakeBrowser({ tabs: threeTabs(), content, sessionData: stored(), localData: { settings: { previews: false } } });
   replies.length = 0;
   const two = await boot(b2);
-  b2.command("flip");
+  b2.press();
   await two.settle();
   assert.deepEqual(replies[0].items.map((i) => i.preview), [null, null, null]);
+});
+
+test("settings from the app are copied into storage.local on start and when Safari regains focus", async () => {
+  const app = { calls: [], settings: null, clearToken: null };
+  app.reply = () => ({ settings: app.settings, clearToken: app.clearToken });
+  const b = fakeBrowser({ tabs: threeTabs(), app });
+  const { settle } = await boot(b);
+  await settle();
+  assert.deepEqual(app.calls, [{ type: "settings:get" }]);
+  assert.equal(b.storage.local.data.settings, undefined, "the app has saved nothing yet");
+
+  app.settings = { overlay: false, previews: false, maxItems: 5 };
+  await sleep(1100); // calls are at most once a second
+  b.windows.onFocusChanged.fire(1);
+  await settle();
+  await sleep(5);
+  const s = b.storage.local.data.settings;
+  assert.equal(s.overlay, false);
+  assert.equal(s.maxItems, 5);
+  assert.equal(s.shortcuts.next.code, "Tab");
+});
+
+test("a new clear token from the app wipes icons and is remembered", async () => {
+  const app = { calls: [], settings: null, clearToken: "t0" };
+  app.reply = () => ({ settings: app.settings, clearToken: app.clearToken });
+  const b = fakeBrowser({ tabs: threeTabs(), app, localData: { clearToken: "t0" } });
+  const { settle } = await boot(b);
+  b.message({ type: "page:meta", icon: ICON_A }, 2);
+  await settle();
+  assert.equal(b.storage.session.data.state.icons[2], ICON_A, "same token at start: nothing cleared");
+
+  app.clearToken = "t1"; // the user pressed Clear… in the app
+  await sleep(1100);
+  b.windows.onFocusChanged.fire(1);
+  await settle();
+  await sleep(5);
+  await settle();
+  assert.deepEqual(b.storage.session.data.state.icons, {});
+  assert.equal(b.storage.local.data.clearToken, "t1");
 });

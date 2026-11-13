@@ -361,13 +361,25 @@ test("focus change to another window cancels; same window is ignored", () => {
   assert.equal(s.session, null);
 });
 
-test("one-tab window: flip is a no-op", () => {
+test("one-tab window: the switcher still shows that one tab, and letting go stays put", () => {
   const s = sim([1]);
-  const fx = s.flip();
-  assert.deepEqual(fx, []);
+  s.flip();
+  const show = s.lastShow();
+  assert.deepEqual(show.order, [1]);
+  assert.equal(show.selectedIndex, 0);
+  s.dispatch({ type: "ack", token: show.token, reply: { ok: true, hasFocus: true, modifiersHeld: true } });
+  s.take();
+  s.flip(); // pressing again stays on the only tab
+  s.dispatch({ type: "release" });
+  const fx = s.take();
+  assert.ok(!fx.some((e) => e.type === "activate"), "nothing to switch to");
   assert.equal(s.session, null);
-  const e = sim([]);
-  assert.deepEqual(e.flip(), []);
+});
+
+test("one-tab window with the switcher off: flip is a no-op", () => {
+  const s = sim([1], { settings: { ...ON, overlay: false } });
+  assert.deepEqual(s.flip(), []);
+  assert.equal(s.session, null);
 });
 
 test("the active tab always leads the frozen order even if the MRU drifted", () => {
@@ -426,34 +438,77 @@ test("flip in another window ends the old session and starts a new one there", (
   assert.deepEqual(r.session.order, [20, 21]);
 });
 
-test("close-and-return activates the previous MRU tab, then closes", () => {
-  const s = sim([3, 1, 2]);
-  s.dispatch({ type: "closeAndReturn", windowId: W, tabId: 3 });
-  const fx = s.take();
-  assert.deepEqual(fx, [
-    { type: "activate", tabId: 1 },
-    { type: "remove", tabId: 3 },
-  ]);
-  const lone = sim([3]);
-  lone.dispatch({ type: "closeAndReturn", windowId: W, tabId: 3 });
-  assert.deepEqual(lone.take(), [{ type: "remove", tabId: 3 }]);
-});
-
-test("close-and-return during a fallback session returns to the tab before it", () => {
-  const s = sim([1, 2, 3], { settings: OFF });
-  s.flip(); // on 2
-  s.take();
-  s.dispatch({ type: "closeAndReturn", windowId: W, tabId: 2 });
-  assert.equal(s.session, null);
-  const fx = s.take();
-  assert.deepEqual(fx.slice(-2), [
-    { type: "activate", tabId: 1 },
-    { type: "remove", tabId: 2 },
-  ]);
-});
-
 test("unknown events and a missing ctx do not throw", () => {
   assert.deepEqual(step(null, { type: "bogus" }), { session: null, effects: [] });
   assert.deepEqual(step(null, null), { session: null, effects: [] });
-  assert.deepEqual(step(null, { type: "flip", windowId: W, tabId: 1 }).effects, []);
+  // A flip with no ctx still works: one tab, so the switcher shows just it.
+  assert.equal(step(null, { type: "flip", windowId: W, tabId: 1 }).effects[0].type, "show");
+});
+
+test("page shortcut: backward starts on the oldest tab, carries its hold modifiers, and walks both ways", () => {
+  const s = sim([1, 2, 3, 4]);
+  s.dispatch({ type: "flip", windowId: W, tabId: 1, dir: -1, modifiers: ["Alt"] });
+  const show = s.lastShow();
+  assert.equal(show.selectedIndex, 3);
+  assert.deepEqual(show.modifiers, ["Alt"]);
+  s.dispatch({ type: "ack", token: show.token, reply: { ok: true, hasFocus: true, modifiersHeld: true } });
+  s.take();
+  s.dispatch({ type: "flip", windowId: W, tabId: 1, dir: -1 });
+  assert.equal(s.session.index, 2);
+  s.dispatch({ type: "flip", windowId: W, tabId: 1, dir: 1 });
+  s.dispatch({ type: "flip", windowId: W, tabId: 1, dir: 1 });
+  assert.equal(s.session.index, 0); // wraps forward past the end
+  assert.deepEqual(types(s.take()), ["move", "move", "move"]);
+});
+
+test("forward flip without modifiers still shows with Control held", () => {
+  const s = sim([1, 2, 3]);
+  s.flip();
+  assert.equal(s.lastShow().selectedIndex, 1);
+  assert.deepEqual(s.lastShow().modifiers, ["Control"]);
+});
+
+test("fallback mode: backward flip activates the oldest tab first", () => {
+  const s = sim([1, 2, 3, 4], { settings: OFF });
+  s.dispatch({ type: "flip", windowId: W, tabId: 1, dir: -1 });
+  assert.equal(s.active, 4);
+});
+
+test("release from the helper commits the overlay selection", () => {
+  const s = sim([1, 2, 3]);
+  s.flip();
+  s.dispatch({ type: "ack", token: s.lastShow().token, reply: { ok: true, modifiersHeld: true } });
+  s.flip(); // on 3
+  s.take();
+  s.dispatch({ type: "release" });
+  assert.equal(s.session, null);
+  assert.equal(s.active, 3);
+  assert.deepEqual(s.list(), [3, 1, 2]);
+});
+
+test("release ends a fallback session at once, without the idle timer", () => {
+  const s = sim([1, 2, 3], { settings: OFF });
+  s.flip(); // on 2
+  s.dispatch({ type: "release" });
+  assert.equal(s.session, null);
+  assert.deepEqual(s.list(), [2, 1, 3]);
+});
+
+test("release before the ack: no switcher stays open, the selection is used", () => {
+  const held = sim([1, 2, 3]);
+  held.flip();
+  held.dispatch({ type: "release" });
+  assert.equal(held.session.mode, "pending");
+  held.dispatch({ type: "ack", token: held.lastShow().token, reply: { ok: true, modifiersHeld: true } });
+  assert.equal(held.session, null, "the page still saw ⌃ down, but it was already let go");
+  assert.equal(held.active, 2);
+
+  const noFocus = sim([1, 2, 3]);
+  noFocus.flip();
+  noFocus.dispatch({ type: "release" });
+  noFocus.dispatch({ type: "ack", token: noFocus.lastShow().token, reply: { ok: true, hasFocus: false, modifiersHeld: false } });
+  assert.equal(noFocus.session, null);
+  assert.equal(noFocus.active, 2);
+  assert.deepEqual(noFocus.list(), [2, 1, 3]);
+  assert.equal(types(noFocus.take()).includes("startIdleTimer"), false);
 });

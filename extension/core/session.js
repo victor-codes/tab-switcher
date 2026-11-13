@@ -11,7 +11,9 @@
 // "pending" = switcher:show sent, ack not processed yet.
 //
 // Events:
-//   { type: "flip", windowId, tabId }            ctx: { now, settings, order }  (tabId = active tab)
+//   { type: "flip", windowId, tabId, dir?, modifiers? }  ctx: { now, settings, order }  (tabId = active tab)
+//        dir: 1 (default) walks to older tabs, -1 walks back; modifiers: keys held while
+//        browsing (default ["Control"]), passed on to switcher:show
 //   { type: "ack", token, reply }                 content-script reply to switcher:show:
 //        { ok: true, hasFocus, modifiersHeld }; hasFocus false -> fallback; hasFocus missing = true
 //   { type: "ackTimeout", token }                 no reply within ACK_TIMEOUT_MS
@@ -21,15 +23,14 @@
 //   { type: "activated", windowId, tabId }        tabs.onActivated / onCreated(active)
 //   { type: "focusChanged", windowId }            windows.onFocusChanged
 //   { type: "external", reason }                  tab removed / attached / detached / replaced, window closed
-//   { type: "closeAndReturn", windowId, tabId }   ctx: { order }
+//   { type: "release" }                           the TabFlip app saw the held modifier let go
 //
 // Effects:
-//   { type: "show", tabId, order, selectedIndex, token, ackTimeoutMs }  send switcher:show, then
+//   { type: "show", tabId, order, selectedIndex, modifiers, token, ackTimeoutMs }  send switcher:show, then
 //        feed back "ack" (reply, possibly undefined) or "ackTimeout"  — this is the ack timer
 //   { type: "move", tabId, selectedIndex }
 //   { type: "hide", tabId }
 //   { type: "activate", tabId }
-//   { type: "remove", tabId }
 //   { type: "startIdleTimer", token, ms }        after ms, feed back { type: "idleTimeout", token }
 //   { type: "promote", windowId, tabId }         mru.activated(windowId, tabId)
 
@@ -42,6 +43,16 @@ export const PENDING_STALE_MS = 1000;
 /** Guard against an overlay whose commit never arrives (e.g. modifier keyup not delivered). */
 export const OVERLAY_STALE_MS = 10000;
 export const DEFAULT_MAX_ITEMS = 8;
+export const DEFAULT_MODIFIERS = Object.freeze(["Control"]);
+
+function dirOf(event) {
+  return event && event.dir === -1 ? -1 : 1;
+}
+
+function modifiersOf(event) {
+  const m = event && Array.isArray(event.modifiers) ? event.modifiers.filter((x) => typeof x === "string") : [];
+  return m.length ? m : [...DEFAULT_MODIFIERS];
+}
 
 const STALE_MS = { pending: PENDING_STALE_MS, overlay: OVERLAY_STALE_MS, fallback: FALLBACK_STALE_MS };
 
@@ -98,23 +109,32 @@ function startSession(event, ctx) {
   if (!isId(active) || !isId(event.windowId)) return { session: null, effects: [] };
   const known = (Array.isArray(ctx.order) ? ctx.order : []).filter((id) => isId(id) && id !== active);
   const order = [active, ...known].slice(0, maxItems(ctx.settings));
-  if (order.length < 2) return { session: null, effects: [] };
+  const showing = !(ctx.settings && ctx.settings.overlay === false);
+  // With one tab there is nothing to switch to, but the switcher still appears (showing
+  // just that tab) so the shortcut visibly works. Without the switcher, nothing happens.
+  if (order.length < 2 && !showing) return { session: null, effects: [] };
+  // Forward starts on the previous tab; backward starts on the oldest one shown.
+  const index = order.length < 2 ? 0 : dirOf(event) < 0 ? order.length - 1 : 1;
+  const modifiers = modifiersOf(event);
   const session = {
     id: now,
     windowId: event.windowId,
     originTabId: active,
     order,
-    index: 1,
+    index,
+    modifiers,
     mode: "pending",
     startedAt: now,
     lastFlipAt: now,
     seq: 0,
     expect: [],
   };
-  if (ctx.settings && ctx.settings.overlay === false) return startFallback(session, now);
+  if (!showing) return startFallback(session, now);
   return {
     session,
-    effects: [{ type: "show", tabId: active, order: order.slice(), selectedIndex: 1, token: session.id, ackTimeoutMs: ACK_TIMEOUT_MS }],
+    effects: [
+      { type: "show", tabId: active, order: order.slice(), selectedIndex: index, modifiers, token: session.id, ackTimeoutMs: ACK_TIMEOUT_MS },
+    ],
   };
 }
 
@@ -126,7 +146,9 @@ function flip(session, event, ctx) {
       event.windowId === session.windowId &&
       (session.mode === "overlay" ? event.tabId === session.originTabId : event.tabId === current(session));
     if (sameGesture) {
-      const next = { ...session, index: (session.index + 1) % session.order.length, lastFlipAt: now, seq: session.seq + 1 };
+      const n = session.order.length;
+      const index = (((session.index + dirOf(event)) % n) + n) % n;
+      const next = { ...session, index, lastFlipAt: now, seq: session.seq + 1 };
       if (next.mode === "overlay") {
         return { session: next, effects: [{ type: "move", tabId: next.originTabId, selectedIndex: next.index }] };
       }
@@ -155,26 +177,40 @@ function commitTo(session, tabId) {
   return { session: null, effects };
 }
 
+/**
+ * A fallback that is already over (the keys were let go before we knew the page can't
+ * show the switcher): switch to the selected tab and promote it, all at once.
+ */
+function finishFallback(session, now) {
+  const f = startFallback(session, now);
+  return { session: null, effects: [...f.effects.filter((e) => e.type !== "startIdleTimer"), ...end(f.session)] };
+}
+
 function ack(session, event, ctx) {
   if (!session || session.mode !== "pending" || event.token !== session.id) return { session, effects: [] };
   const r = event.reply;
   if (r && r.ok === true && typeof r.modifiersHeld === "boolean") {
     if (r.hasFocus === false) {
+      if (session.released) {
+        const f = finishFallback(session, ctx.now);
+        return { session: null, effects: [{ type: "hide", tabId: session.originTabId }, ...f.effects] };
+      }
       // The page cannot see key events, so no keyup will ever arrive. Hide in case it drew.
       const f = startFallback(session, ctx.now);
       return { session: f.session, effects: [{ type: "hide", tabId: session.originTabId }, ...f.effects] };
     }
     // hasFocus true or absent (treated as true):
-    if (r.modifiersHeld) return { session: { ...session, mode: "overlay" }, effects: [] };
+    if (r.modifiersHeld && !session.released) return { session: { ...session, mode: "overlay" }, effects: [] };
     return commitTo(session, current(session)); // quick tap: key already released
   }
-  return startFallback(session, ctx.now); // undefined / malformed reply: no content script
+  // undefined / malformed reply: no content script
+  return session.released ? finishFallback(session, ctx.now) : startFallback(session, ctx.now);
 }
 
 function ackTimeout(session, event, ctx) {
   if (!session || session.mode !== "pending" || event.token !== session.id) return { session, effects: [] };
   // A slow page might still draw the overlay after we gave up on it.
-  const r = startFallback(session, ctx.now);
+  const r = session.released ? finishFallback(session, ctx.now) : startFallback(session, ctx.now);
   return { session: r.session, effects: [{ type: "hide", tabId: session.originTabId }, ...r.effects] };
 }
 
@@ -187,6 +223,18 @@ function commit(session, event) {
 function cancel(session, event) {
   if (!session || session.mode !== "overlay" || event.senderTabId !== session.originTabId) return { session, effects: [] };
   return { session: null, effects: end(session) };
+}
+
+/**
+ * The held modifier was let go (reported by the TabFlip app, which sees it even when the
+ * page doesn't have focus). Overlay: commit to the selection. Fallback: done now, no need
+ * to wait for the idle timer. Pending: remember it for when the ack arrives.
+ */
+function release(session) {
+  if (!session) return { session, effects: [] };
+  if (session.mode === "overlay") return commitTo(session, current(session));
+  if (session.mode === "fallback") return { session: null, effects: end(session) };
+  return { session: { ...session, released: true }, effects: [] };
 }
 
 function idleTimeout(session, event) {
@@ -208,17 +256,6 @@ function activatedEvent(session, event) {
 function focusChanged(session, event) {
   if (!session || event.windowId === session.windowId) return { session, effects: [] };
   return { session: null, effects: end(session) };
-}
-
-function closeAndReturn(session, event, ctx) {
-  const effects = end(session);
-  const active = event.tabId;
-  if (!isId(active)) return { session: null, effects };
-  const order = (Array.isArray(ctx.order) ? ctx.order : []).filter((id) => isId(id) && id !== active);
-  // Activate the previous MRU tab first so Safari never shows the neighbour, then close.
-  if (order.length) effects.push({ type: "activate", tabId: order[0] });
-  effects.push({ type: "remove", tabId: active });
-  return { session: null, effects };
 }
 
 /**
@@ -244,7 +281,7 @@ export function step(session, event, ctx = {}) {
     case "activated": r = activatedEvent(session, event); break;
     case "focusChanged": r = focusChanged(session, event); break;
     case "external": r = { session: null, effects: end(session) }; break;
-    case "closeAndReturn": r = closeAndReturn(session, event, c); break;
+    case "release": r = release(session, c); break;
     default: r = { session, effects: [] };
   }
   return { session: r.session ?? null, effects: [...pre, ...r.effects] };

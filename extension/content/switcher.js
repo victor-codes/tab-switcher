@@ -146,7 +146,25 @@
     return null;
   }
 
-  const pure = { normalizeModifiers, wrapIndex, safePreview, safeIcon, iconSource, sanitizeItem, largestSize, iconScore, pickIcon };
+  /**
+   * Columns for n cards: at most 5, fewer when the viewport cannot fit 150 px cards
+   * (16 px gutters + 10 px panel padding each side, 4 px gaps). Rows are then
+   * balanced, so 8 tabs lay out 4 + 4 rather than 5 + 3.
+   */
+  function columnsFor(n, viewportWidth) {
+    if (!(n > 0)) return 1;
+    const fit = Math.max(1, Math.floor((viewportWidth - 52 + 4) / (150 + 4)));
+    const max = Math.min(n, 5, fit);
+    return Math.ceil(n / Math.ceil(n / max));
+  }
+
+  /** Card width for `cols` columns: 196 px, shrinking to fit narrow viewports. */
+  function cardWidthFor(cols, viewportWidth) {
+    const avail = viewportWidth - 52 - (cols - 1) * 4;
+    return Math.max(100, Math.min(196, Math.floor(avail / Math.max(1, cols))));
+  }
+
+  const pure = { normalizeModifiers, wrapIndex, columnsFor, cardWidthFor, readShortcuts: (r) => readShortcuts(r), safePreview, safeIcon, iconSource, sanitizeItem, largestSize, iconScore, pickIcon };
 
   // ---------------------------------------------------------------------------
   // Passive modifier tracking
@@ -180,8 +198,79 @@
     e.stopImmediatePropagation();
   }
 
+  // ---------------------------------------------------------------------------
+  // Page shortcuts (⌃Tab / ⌃⇧Tab by default, or the user's own; see core/shortcuts.js,
+  // which this mirrors: a content script cannot import). Normally the TabFlip app claims
+  // them before Safari or the page sees them; when it isn’t running they are caught here,
+  // on the page, and sent to the background as `switcher:key` (only while the page has
+  // keyboard focus).
+  // ---------------------------------------------------------------------------
+
+  const DEFAULT_KEYS = {
+    next: { ctrl: true, alt: false, shift: false, meta: false, code: "Tab" },
+    prev: { ctrl: true, alt: false, shift: true, meta: false, code: "Tab" },
+  };
+  const SHORTCUT_FLAGS = ["ctrl", "alt", "shift", "meta"];
+  let keys = DEFAULT_KEYS;
+
+  function readShortcut(raw) {
+    if (!raw || typeof raw !== "object" || typeof raw.code !== "string" || !raw.code) return null;
+    if (raw.code === "Escape" || /^Arrow/.test(raw.code)) return null;
+    const s = { code: raw.code };
+    for (const f of SHORTCUT_FLAGS) s[f] = raw[f] === true;
+    return s.ctrl || s.alt || s.meta ? s : null;
+  }
+
+  /** The stored pair, or the defaults if it is unusable (same rules as the background). */
+  function readShortcuts(raw) {
+    const r = raw && typeof raw === "object" ? raw : {};
+    const next = readShortcut(r.next);
+    const prev = readShortcut(r.prev);
+    if (!next || !prev) return DEFAULT_KEYS;
+    const same = next.code === prev.code && SHORTCUT_FLAGS.every((f) => next[f] === prev[f]);
+    const shared = ["ctrl", "alt", "meta"].some((f) => next[f] && prev[f]);
+    return same || !shared ? DEFAULT_KEYS : { next, prev };
+  }
+
+  function matches(s, e) {
+    return e.code === s.code && e.ctrlKey === s.ctrl && e.altKey === s.alt && e.shiftKey === s.shift && e.metaKey === s.meta;
+  }
+
+  /** 1 for the next shortcut, -1 for previous, 0 for anything else. */
+  function shortcutDir(e) {
+    if (!e.ctrlKey && !e.altKey && !e.metaKey) return 0; // fast path for ordinary typing
+    if (matches(keys.next, e)) return 1;
+    if (matches(keys.prev, e)) return -1;
+    return 0;
+  }
+
+  try {
+    const area = browser.storage && browser.storage.local;
+    if (area) {
+      Promise.resolve(area.get("settings"))
+        .then((got) => {
+          keys = readShortcuts(got && got.settings && got.settings.shortcuts);
+        })
+        .catch(() => {});
+      browser.storage.onChanged.addListener((changes, name) => {
+        if (name === "local" && changes.settings) keys = readShortcuts(changes.settings.newValue && changes.settings.newValue.shortcuts);
+      });
+    }
+  } catch (e) {
+    /* no storage access: keep the defaults */
+  }
+
   function onKeyDown(e) {
     syncModifiers(e);
+    const dir = shortcutDir(e);
+    if (dir) {
+      // Ours: keep it from the page and from Safari, and let the background decide
+      // (start a session, or move the one that is showing).
+      swallow(e);
+      swallowed.add(e.key);
+      send({ type: "switcher:key", dir });
+      return;
+    }
     if (!session) return;
     switch (e.key) {
       case "Escape":
@@ -241,6 +330,29 @@
     },
     true
   );
+
+  // Safari unloads the extension's idle background after about 30 seconds, and a key
+  // press the app sends then is dropped. While this page is the one on screen, a small
+  // message every 20 seconds wakes the background (which reconnects to the app) and
+  // keeps it awake. Top frame only, and only while visible, so it costs next to nothing.
+  if (window.top === window) {
+    const KEEPALIVE_MS = 20_000;
+    let keepalive = null;
+    const ping = () => send({ type: "keepalive" });
+    const syncKeepalive = () => {
+      if (document.visibilityState === "visible") {
+        if (keepalive === null) {
+          ping();
+          keepalive = setInterval(ping, KEEPALIVE_MS);
+        }
+      } else if (keepalive !== null) {
+        clearInterval(keepalive);
+        keepalive = null;
+      }
+    };
+    document.addEventListener("visibilitychange", syncKeepalive);
+    syncKeepalive();
+  }
 
   // ---------------------------------------------------------------------------
   // Messaging
@@ -316,60 +428,84 @@
   direction: ltr;
   font: 13px/1.3 -apple-system, BlinkMacSystemFont, system-ui, "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
-  --fg: #1d1d1f; --fg2: #6e6e73; --panel: rgba(246,246,248,0.80); --panel-solid: #f6f6f8;
-  --edge: rgba(0,0,0,0.12); --card-hover: rgba(0,0,0,0.05); --card-sel: rgba(0,0,0,0.07);
-  --thumb: #e4e4e8; --glyph-bg: #d2d2d8; --accent: #007aff;
+  --fg: #1d1d1f; --fg2: #6e6e73;
+  --panel: rgba(244,244,247,0.72); --panel-solid: #f2f2f5;
+  --edge: rgba(0,0,0,0.10); --rim: rgba(255,255,255,0.65);
+  --plate: rgba(0,0,0,0.08);
+  --thumb: #e4e4e8; --thumb-edge: rgba(0,0,0,0.08); --glyph-bg: #d2d2d8;
+  --accent: #007aff;
+  --shadow: 0 24px 64px rgba(0,0,0,0.22), 0 8px 20px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.12);
   color: var(--fg);
 }
 @media (prefers-color-scheme: dark) {
   .wrap {
-    --fg: #f5f5f7; --fg2: #a1a1a6; --panel: rgba(38,38,42,0.78); --panel-solid: #26262a;
-    --edge: rgba(255,255,255,0.14); --card-hover: rgba(255,255,255,0.06); --card-sel: rgba(255,255,255,0.10);
-    --thumb: #3a3a3f; --glyph-bg: #4a4a50; --accent: #0a84ff;
+    --fg: #f5f5f7; --fg2: #98989f;
+    --panel: rgba(36,36,40,0.70); --panel-solid: #242428;
+    --edge: rgba(255,255,255,0.10); --rim: rgba(255,255,255,0.14);
+    --plate: rgba(255,255,255,0.11);
+    --thumb: #3a3a3f; --thumb-edge: rgba(255,255,255,0.10); --glyph-bg: #4a4a50;
+    --accent: #0a84ff;
+    --shadow: 0 24px 64px rgba(0,0,0,0.50), 0 8px 20px rgba(0,0,0,0.30), 0 0 0 0.5px rgba(0,0,0,0.60);
   }
 }
+/* Panel: one thick material layer floating over the page. Radius is concentric with
+   the cards inside it (card radius 14 + panel padding 10 = 24). */
 .panel {
   pointer-events: auto;
   max-width: 100%; max-height: 100%;
   display: flex;
   padding: 10px;
-  border-radius: 18px;
+  border-radius: 24px;
   background: var(--panel);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
-  backdrop-filter: blur(30px) saturate(180%);
-  border: 0.5px solid var(--edge);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.30), 0 2px 8px rgba(0,0,0,0.12);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  box-shadow: inset 0 0.5px 0 var(--rim), var(--shadow);
   cursor: default;
   user-select: none; -webkit-user-select: none;
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .panel { background: var(--panel-solid); }
 }
+@media (prefers-reduced-transparency: reduce) {
+  .panel { background: var(--panel-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  .wrap { --fg2: var(--fg); --edge: var(--fg); --thumb-edge: var(--fg2); }
+  .card.sel { box-shadow: inset 0 0 0 1.5px var(--fg); }
+  .panel {
+    background: var(--panel-solid); -webkit-backdrop-filter: none; backdrop-filter: none;
+    box-shadow: 0 0 0 1px var(--fg), var(--shadow);
+  }
+}
 .list {
-  display: grid;
-  grid-template-columns: repeat(var(--cols, 1), minmax(0, 200px));
-  gap: 6px;
-  padding: 4px;
+  /* Flex rows so a short last row (7 tabs -> 4 + 3) sits centered under the full one. */
+  display: flex; flex-wrap: wrap; justify-content: center;
+  width: calc(var(--cols, 1) * var(--cw, 196px) + (var(--cols, 1) - 1) * 4px);
+  max-width: 100%;
+  gap: 4px;
   margin: 0;
   overflow: auto;
-  max-height: calc(100vh - 56px);
+  max-height: calc(100vh - 52px);
   overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
+/* The selection is a single soft plate behind the card. No hover state: the
+   pointer moves the selection itself, so there is only ever one highlight. */
 .card {
+  flex: 0 0 var(--cw, 196px);
   min-width: 0;
-  padding: 8px;
-  border-radius: 12px;
+  padding: 8px 8px 7px;
+  border-radius: 14px;
 }
-.card:hover { background: var(--card-hover); }
-.card.sel { background: var(--card-sel); box-shadow: 0 0 0 2.5px var(--accent); }
+.card.sel { background: var(--plate); }
 .thumb {
   position: relative;
   aspect-ratio: 16 / 10;
-  border-radius: 7px;
+  border-radius: 8px;
   overflow: hidden;
   background: var(--thumb);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: inset 0 0 0 0.5px var(--edge);
+  box-shadow: 0 0 0 0.5px var(--thumb-edge), 0 1px 3px rgba(0,0,0,0.08);
 }
 .thumb > .shot {
   position: absolute; inset: 0;
@@ -377,7 +513,7 @@
   object-fit: cover; object-position: top center;
   display: block;
 }
-.thumb > .big { width: 32px; height: 32px; display: block; }
+.thumb > .big { width: 32px; height: 32px; display: block; border-radius: 7px; }
 .glyph {
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%;
@@ -385,20 +521,23 @@
   font-weight: 600;
   overflow: hidden;
 }
-.thumb > .glyph { width: 40px; height: 40px; font-size: 18px; }
-.row { display: flex; align-items: center; gap: 6px; margin-top: 7px; min-width: 0; }
-.row > .ico { width: 16px; height: 16px; flex: 0 0 16px; display: block; border-radius: 3px; }
+.thumb > .glyph { width: 40px; height: 40px; font-size: 18px; letter-spacing: -0.01em; }
+.row { display: flex; align-items: center; gap: 6px; margin: 9px 0 2px; min-width: 0; }
+.row > .ico { width: 16px; height: 16px; flex: 0 0 16px; display: block; border-radius: 4px; }
 .row > .glyph { width: 16px; height: 16px; flex: 0 0 16px; font-size: 9px; }
 .title {
   flex: 1 1 auto; min-width: 0;
   font-weight: 500;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  letter-spacing: -0.006em;
+  /* Long titles fade out at the trailing edge instead of ending in an ellipsis.
+     The mask spans the whole title box, so a short title never reaches it. */
+  white-space: nowrap; overflow: hidden; text-overflow: clip;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
 }
-.host {
-  margin: 1px 0 0 22px;
-  min-height: 1.3em;
-  font-size: 11px; color: var(--fg2);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.title:dir(rtl) {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
 }
 `;
 
@@ -492,11 +631,6 @@
     card.title = title.textContent;
     row.appendChild(title);
     card.appendChild(row);
-
-    const hostLine = el("div", "host");
-    hostLine.dir = "auto";
-    hostLine.textContent = item.host;
-    card.appendChild(hostLine);
     return card;
   }
 
@@ -557,10 +691,9 @@
     const list = el("div", "list");
     list.setAttribute("role", "listbox");
     list.setAttribute("aria-label", "Recent tabs");
-    // Up to 5 per row; fewer when the viewport cannot fit 150 px cards
-    // (16 px gutters + 14 px panel padding each side, 6 px gaps).
-    const fit = Math.floor((window.innerWidth - 60 + 6) / (150 + 6));
-    list.style.setProperty("--cols", String(Math.max(1, Math.min(s.items.length, 5, fit))));
+    const cols = columnsFor(s.items.length, window.innerWidth);
+    list.style.setProperty("--cols", String(cols));
+    list.style.setProperty("--cw", cardWidthFor(cols, window.innerWidth) + "px");
     cards = s.items.map((item, i) => {
       const c = buildCard(item, i);
       list.appendChild(c);
@@ -572,6 +705,8 @@
 
     // Control-click on macOS is a context click: act on mousedown, never on click.
     panel.addEventListener("mousedown", onPanelMouseDown);
+    panel.addEventListener("pointermove", onPanelPointerMove);
+    pointerOrigin = null;
     panel.addEventListener("contextmenu", (e) => e.preventDefault());
 
     listEl = list;
@@ -602,6 +737,31 @@
           session.index = i;
           finish("commit");
         }
+        return;
+      }
+    }
+  }
+
+  /**
+   * The pointer moves the selection (one highlight, never a separate hover state).
+   * The panel can appear under a resting cursor, and some engines fire a move then,
+   * so the selection only follows once the pointer has really travelled a few px.
+   */
+  let pointerOrigin = null;
+  function onPanelPointerMove(e) {
+    if (!session || e.pointerType === "touch") return;
+    if (!pointerOrigin) {
+      pointerOrigin = { x: e.clientX, y: e.clientY, live: false };
+      return;
+    }
+    if (!pointerOrigin.live) {
+      if (Math.hypot(e.clientX - pointerOrigin.x, e.clientY - pointerOrigin.y) < 4) return;
+      pointerOrigin.live = true;
+    }
+    for (const node of e.composedPath()) {
+      if (node && node.classList && node.classList.contains("card")) {
+        const i = Number(node.dataset.index);
+        if (i >= 0 && i < session.items.length && i !== session.index) select(i);
         return;
       }
     }

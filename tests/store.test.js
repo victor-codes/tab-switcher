@@ -46,9 +46,10 @@ test("normalizeState repairs junk", () => {
 
 test("settings default when absent or invalid", async () => {
   assert.deepEqual(normalizeSettings(undefined), DEFAULT_SETTINGS);
-  assert.deepEqual(normalizeSettings({ overlay: false, maxItems: 1, previews: "no" }), { overlay: false, previews: true, maxItems: 8 });
+  const shortcuts = normalizeSettings(undefined).shortcuts;
+  assert.deepEqual(normalizeSettings({ overlay: false, maxItems: 1, previews: "no" }), { overlay: false, previews: true, maxItems: 8, shortcuts });
   const store = createStore(fakeArea(), fakeArea({ settings: { overlay: false, maxItems: 5 } }));
-  assert.deepEqual(await store.loadSettings(), { overlay: false, previews: true, maxItems: 5 });
+  assert.deepEqual(await store.loadSettings(), { overlay: false, previews: true, maxItems: 5, shortcuts });
 });
 
 test("queue runs jobs one at a time in order and survives failures", async () => {
