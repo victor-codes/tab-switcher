@@ -9,6 +9,38 @@ A Safari extension for macOS that switches tabs in most-recently-used order.
 
 Requires macOS 14 or later and Safari 17 or later.
 
+## Install
+
+With [Homebrew](https://brew.sh):
+
+```sh
+brew tap victor-codes/tap
+brew trust victor-codes/tap
+brew install --cask tab-switcher
+```
+
+`brew upgrade --cask tab-switcher` gets new versions; `brew uninstall --cask tab-switcher` removes it.
+
+Without Homebrew, download `TabSwitcher-<version>.zip` from the [latest release](https://github.com/victor-codes/tab-switcher/releases/latest), unzip it, and move **Tab Switcher** to Applications.
+
+### First launch
+
+Releases are not notarized yet, so macOS and Safari need two extra steps:
+
+1. If macOS says Tab Switcher can't be opened, clear the download flag and open it again:
+
+   ```sh
+   xattr -dr com.apple.quarantine "/Applications/Tab Switcher.app"
+   ```
+
+2. In Safari, turn on **Allow unsigned extensions** (see [Allowing an unsigned extension](#allowing-an-unsigned-extension-local-development) below). Safari turns this off each time it quits, so turn it on again after restarting Safari.
+
+Then follow [Setting it up](#setting-it-up).
+
+## Releasing
+
+`tools/release.sh <version>` builds the app, zips it and updates the cask in a [homebrew-tap](https://github.com/victor-codes/homebrew-tap) checkout next to this repo. Add `--publish` to tag the version, create the GitHub release and push the tap. Set `NOTARY_PROFILE` to a `notarytool` keychain profile to sign with Developer ID and notarize (needs a paid Apple Developer account).
+
 ## Build and run
 
 1. Open `TabFlip.xcodeproj` in Xcode 15 or later, or build from the command line:
