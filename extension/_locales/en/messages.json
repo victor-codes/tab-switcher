@@ -14,5 +14,9 @@
   "command_close_and_return": {
     "message": "Close the current tab and return to the previously used tab",
     "description": "Description of the close-and-return command."
+  },
+  "switcher_untitled": {
+    "message": "Untitled",
+    "description": "Shown in the tab switcher for a tab that has neither a title nor a host."
   }
 }
