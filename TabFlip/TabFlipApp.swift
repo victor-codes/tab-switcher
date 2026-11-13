@@ -21,19 +21,19 @@ struct TabFlipApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        Window("TabFlip", id: "main") {
+        Window("Tab Switcher", id: "main") {
             ContentView()
         }
-        .windowStyle(.hiddenTitleBar)
-        .windowResizability(.contentMinSize)
+        // Size the window to ContentView's frame limits (min and max), not just its minimum.
+        .windowResizability(.contentSize)
         .commands {
             // Single window, no document model: drop File > New.
             CommandGroup(replacing: .newItem) {}
             // ⌘Q closes the window; TabFlip keeps running so the shortcuts keep working.
             CommandGroup(replacing: .appTermination) {
-                Button("Close TabFlip") { AppDelegate.closeWindows() }
+                Button("Close Window") { AppDelegate.closeWindows() }
                     .keyboardShortcut("q")
-                Button("Quit TabFlip Completely") { NSApp.terminate(nil) }
+                Button("Quit Completely") { NSApp.terminate(nil) }
                     .keyboardShortcut("q", modifiers: [.command, .option])
             }
         }

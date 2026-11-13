@@ -361,13 +361,25 @@ test("focus change to another window cancels; same window is ignored", () => {
   assert.equal(s.session, null);
 });
 
-test("one-tab window: flip is a no-op", () => {
+test("one-tab window: the switcher still shows that one tab, and letting go stays put", () => {
   const s = sim([1]);
-  const fx = s.flip();
-  assert.deepEqual(fx, []);
+  s.flip();
+  const show = s.lastShow();
+  assert.deepEqual(show.order, [1]);
+  assert.equal(show.selectedIndex, 0);
+  s.dispatch({ type: "ack", token: show.token, reply: { ok: true, hasFocus: true, modifiersHeld: true } });
+  s.take();
+  s.flip(); // pressing again stays on the only tab
+  s.dispatch({ type: "release" });
+  const fx = s.take();
+  assert.ok(!fx.some((e) => e.type === "activate"), "nothing to switch to");
   assert.equal(s.session, null);
-  const e = sim([]);
-  assert.deepEqual(e.flip(), []);
+});
+
+test("one-tab window with the switcher off: flip is a no-op", () => {
+  const s = sim([1], { settings: { ...ON, overlay: false } });
+  assert.deepEqual(s.flip(), []);
+  assert.equal(s.session, null);
 });
 
 test("the active tab always leads the frozen order even if the MRU drifted", () => {
@@ -429,7 +441,8 @@ test("flip in another window ends the old session and starts a new one there", (
 test("unknown events and a missing ctx do not throw", () => {
   assert.deepEqual(step(null, { type: "bogus" }), { session: null, effects: [] });
   assert.deepEqual(step(null, null), { session: null, effects: [] });
-  assert.deepEqual(step(null, { type: "flip", windowId: W, tabId: 1 }).effects, []);
+  // A flip with no ctx still works: one tab, so the switcher shows just it.
+  assert.equal(step(null, { type: "flip", windowId: W, tabId: 1 }).effects[0].type, "show");
 });
 
 test("page shortcut: backward starts on the oldest tab, carries its hold modifiers, and walks both ways", () => {

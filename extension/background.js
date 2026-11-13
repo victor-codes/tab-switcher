@@ -482,6 +482,12 @@ function onMessage(msg, sender) {
     // The returned promise is the reply (both reply styles work in Safari; measured).
     return isExtensionPage(sender) ? clearAllData() : undefined;
   }
+  if (msg.type === "keepalive") {
+    // A visible page wakes this background every 20 seconds (content/switcher.js) so it
+    // stays loaded for the app's key presses; make sure their port is open.
+    connectApp();
+    return undefined;
+  }
   if (!sender.tab) return undefined;
   const senderTab = sender.tab;
   switch (msg.type) {
@@ -529,3 +535,13 @@ api.storage.onChanged?.addListener(onStorageChanged);
 // port the app's key presses arrive on.
 syncFromApp();
 connectApp();
+
+// Safari unloads an idle background after about 30 seconds, and a key press the app
+// sends while it is unloaded is dropped (dispatchMessage does not wake it). Visible
+// pages ping it (content/switcher.js), but nothing runs on the Start Page or on sites
+// Tab Switcher may not access, so an alarm also wakes it every 30 seconds.
+api.alarms?.create?.("keepalive", { periodInMinutes: 0.5 });
+api.alarms?.onAlarm?.addListener((alarm) => {
+  if (alarm?.name === "keepalive") connectApp();
+});
+

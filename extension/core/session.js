@@ -109,9 +109,12 @@ function startSession(event, ctx) {
   if (!isId(active) || !isId(event.windowId)) return { session: null, effects: [] };
   const known = (Array.isArray(ctx.order) ? ctx.order : []).filter((id) => isId(id) && id !== active);
   const order = [active, ...known].slice(0, maxItems(ctx.settings));
-  if (order.length < 2) return { session: null, effects: [] };
+  const showing = !(ctx.settings && ctx.settings.overlay === false);
+  // With one tab there is nothing to switch to, but the switcher still appears (showing
+  // just that tab) so the shortcut visibly works. Without the switcher, nothing happens.
+  if (order.length < 2 && !showing) return { session: null, effects: [] };
   // Forward starts on the previous tab; backward starts on the oldest one shown.
-  const index = dirOf(event) < 0 ? order.length - 1 : 1;
+  const index = order.length < 2 ? 0 : dirOf(event) < 0 ? order.length - 1 : 1;
   const modifiers = modifiersOf(event);
   const session = {
     id: now,
@@ -126,7 +129,7 @@ function startSession(event, ctx) {
     seq: 0,
     expect: [],
   };
-  if (ctx.settings && ctx.settings.overlay === false) return startFallback(session, now);
+  if (!showing) return startFallback(session, now);
   return {
     session,
     effects: [

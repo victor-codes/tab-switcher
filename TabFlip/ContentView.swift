@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  TabFlip
 //
-//  The app's one window, and the only place to configure TabFlip: extension status,
+//  The app's one window, and the only place to configure Tab Switcher: extension status,
 //  switcher options, switch shortcuts and stored data. Changes are saved at once
 //  (Settings.swift) and reach the extension the next time Safari becomes active. The
 //  shortcuts themselves are claimed by the app while it runs in the background
@@ -83,8 +83,8 @@ final class HelperStatus: ObservableObject {
         switch service.status {
         case .enabled: state = .running
         case .requiresApproval: state = .needsApproval
-        case .notRegistered: state = .unavailable("TabFlip isn’t set to open at login.")
-        case .notFound: state = .unavailable("macOS couldn’t find this copy of TabFlip.")
+        case .notRegistered: state = .unavailable("Tab Switcher isn’t set to open at login.")
+        case .notFound: state = .unavailable("macOS couldn’t find this copy of Tab Switcher.")
         @unknown default: state = .unavailable("Unknown login item state.")
         }
     }
@@ -106,22 +106,19 @@ struct ContentView: View {
     @State private var clearRequested = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-                .padding(.horizontal, 28)
-                .padding(.top, 36)
-                .padding(.bottom, 4)
-            Form {
-                statusSection
-                switcherSection
-                shortcutsSection
-                dataSection
-                privacySection
-            }
-            .formStyle(.grouped)
+        // One form that fills the window, so its scroller sits at the window's edge.
+        Form {
+            setupSection
+            switcherSection
+            shortcutsSection
+            dataSection
         }
-        .frame(width: 520)
-        .frame(minHeight: 520, idealHeight: 820)
+        .formStyle(.grouped)
+        // The grouped form's default margins are wide for a small window; match System Settings.
+        .contentMargins(.horizontal, 4, for: .scrollContent)
+        .contentMargins(.top, 0, for: .scrollContent)
+        .frame(width: 420)
+        .frame(minHeight: 420, maxHeight: 560)
         .task {
             await status.refresh()
             helper.start()
@@ -135,59 +132,35 @@ struct ContentView: View {
         }
     }
 
-    // MARK: Header
+    // MARK: Setup
 
-    private var header: some View {
-        HStack(spacing: 14) {
-            Image(nsImage: NSApplication.shared.applicationIconImage)
-                .resizable()
-                .frame(width: 56, height: 56)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("TabFlip")
-                    .font(.largeTitle.weight(.bold))
-                Text("Switch Safari tabs in the order you last used them.")
-                    .foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 0)
-        }
-    }
-
-    // MARK: Status
-
-    private var statusSection: some View {
+    private var setupSection: some View {
         Section {
-            HStack(spacing: 10) {
-                Image(systemName: statusSymbol)
-                    .font(.title3)
-                    .foregroundStyle(statusColor)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(statusTitle)
-                    if let detail = statusDetail {
-                        Text(detail)
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                Spacer()
-                Button(status.state == .enabled ? "Open Safari Settings" : "Turn On in Safari…") {
+            StatusRow(symbol: extensionSymbol, color: extensionColor, title: "Safari extension",
+                      detail: extensionDetail) {
+                Button(status.state == .enabled ? "Safari Settings…" : "Turn On…") {
                     Task { await status.openSafariSettings() }
                 }
             }
-            .accessibilityElement(children: .contain)
-            helperRow
+            StatusRow(symbol: helper.state == .running ? "checkmark.circle.fill" : "exclamationmark.circle.fill",
+                      color: helper.state == .running ? .green : .orange,
+                      title: "Keyboard shortcuts", detail: helperDetail) {
+                if helper.state != .running {
+                    Button("Login Items…") { helper.openLoginItems() }
+                }
+            }
+        } header: {
+            Text("Setup")
         } footer: {
             VStack(alignment: .leading, spacing: 4) {
                 if let error = status.openError {
                     Text("Couldn’t open Safari Settings: \(error)").foregroundStyle(.red)
                 }
                 if !store.isShared {
-                    Text("This copy of TabFlip can’t share settings with Safari. It needs to be signed with a team in Xcode.")
+                    Text("This copy can’t share settings with Safari. Sign it with a team in Xcode.")
                         .foregroundStyle(.red)
                 }
-                Text("TabFlip needs access to all websites: next to TabFlip in Safari Settings, click Edit Websites… and set Other Websites to Allow.")
+                Text("For the switcher to appear on pages, allow Tab Switcher on all websites: in Safari Settings › Extensions, click Edit Websites… and set Other Websites to Allow.")
                     .foregroundStyle(.secondary)
             }
             .font(.callout)
@@ -195,34 +168,37 @@ struct ContentView: View {
         }
     }
 
-    private var helperRow: some View {
-        HStack(spacing: 10) {
-            Image(systemName: helper.state == .running ? "keyboard.fill" : "exclamationmark.circle.fill")
-                .font(.title3)
-                .foregroundStyle(helper.state == .running ? Color.green : Color.orange)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                switch helper.state {
-                case .running:
-                    Text("Shortcuts on")
-                    Text("They work anywhere in Safari, even in the address bar.")
-                        .font(.callout).foregroundStyle(.secondary)
-                case .needsApproval:
-                    Text("Shortcuts off after restart")
-                    Text("Turn on TabFlip in System Settings › General › Login Items so it opens at login.")
-                        .font(.callout).foregroundStyle(.secondary)
-                case .unavailable(let message):
-                    Text("Shortcuts unavailable")
-                    Text(message).font(.callout).foregroundStyle(.secondary)
-                }
-            }
-            .fixedSize(horizontal: false, vertical: true)
-            Spacer()
-            if helper.state != .running {
-                Button("Open Login Items…") { helper.openLoginItems() }
-            }
+    private var extensionSymbol: String {
+        switch status.state {
+        case .enabled: return "checkmark.circle.fill"
+        case .disabled: return "exclamationmark.circle.fill"
+        case .checking, .unavailable: return "questionmark.circle.fill"
         }
-        .accessibilityElement(children: .contain)
+    }
+
+    private var extensionColor: Color {
+        switch status.state {
+        case .enabled: return .green
+        case .disabled: return .orange
+        case .checking, .unavailable: return .secondary
+        }
+    }
+
+    private var extensionDetail: String {
+        switch status.state {
+        case .checking: return "Checking…"
+        case .enabled: return "On"
+        case .disabled: return "Off. Turn on Tab Switcher in Safari Settings › Extensions."
+        case .unavailable(let message): return message
+        }
+    }
+
+    private var helperDetail: String {
+        switch helper.state {
+        case .running: return "On everywhere in Safari, even in the address bar"
+        case .needsApproval: return "Off after a restart. Allow Tab Switcher in System Settings › General › Login Items."
+        case .unavailable(let message): return message
+        }
     }
 
     // MARK: Switcher
@@ -231,13 +207,13 @@ struct ContentView: View {
         Section("Switcher") {
             Toggle(isOn: $store.settings.overlay) {
                 Text("Show the switcher")
-                Text("When off, each press switches straight away.")
+                Text("When off, each press goes straight to the tab.")
             }
             Toggle(isOn: $store.settings.previews) {
                 Text("Show page previews")
-                Text("Turning this off deletes the stored pictures.")
+                Text("Turning this off deletes saved previews.")
             }
-            Picker("Tabs in the switcher", selection: $store.settings.maxItems) {
+            Picker("Tabs shown", selection: $store.settings.maxItems) {
                 ForEach(Array(TabFlipSettings.maxItemsRange), id: \.self) { n in
                     Text("\(n)").tag(n)
                 }
@@ -245,29 +221,29 @@ struct ContentView: View {
         }
     }
 
-    // MARK: Switch shortcuts
+    // MARK: Shortcuts
 
     private var shortcutsSection: some View {
         Section {
-            LabeledContent("Next recent tab") {
-                ShortcutField(slot: .next, shortcut: store.settings.shortcuts.next, label: "Next recent tab",
+            LabeledContent("Next tab") {
+                ShortcutField(slot: .next, shortcut: store.settings.shortcuts.next, label: "Next tab",
                               recording: $recording, onRecord: record)
             }
-            LabeledContent("Previous recent tab") {
-                ShortcutField(slot: .prev, shortcut: store.settings.shortcuts.prev, label: "Previous recent tab",
+            LabeledContent("Previous tab") {
+                ShortcutField(slot: .prev, shortcut: store.settings.shortcuts.prev, label: "Previous tab",
                               recording: $recording, onRecord: record)
             }
         } header: {
-            Text("Keyboard Shortcuts")
+            Text("Shortcuts")
         } footer: {
-            HStack(alignment: .top) {
+            HStack(alignment: .firstTextBaseline) {
                 Group {
                     if let keyMessage {
                         Text(keyMessage).foregroundStyle(.red)
                     } else if recording != nil {
-                        Text("Press the new shortcut, or Esc to cancel.").foregroundStyle(.secondary)
+                        Text("Press the new shortcut. Esc cancels.").foregroundStyle(.secondary)
                     } else {
-                        Text("Hold the modifier and keep tapping to go further back.")
+                        Text("Keep holding the modifier and press again to go further back.")
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -279,6 +255,7 @@ struct ContentView: View {
                     keyMessage = nil
                     store.settings.shortcuts = .defaults
                 }
+                .controlSize(.small)
                 .disabled(store.settings.shortcuts == .defaults)
             }
         }
@@ -306,20 +283,13 @@ struct ContentView: View {
         return nil
     }
 
-    // MARK: Stored data
+    // MARK: Privacy
 
     private var dataSection: some View {
         Section {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Previews and history")
-                    Text("Recent-tab order, site icons and page previews.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
+            LabeledContent {
                 Button("Clear…") { confirmClear = true }
-                    .confirmationDialog("Clear all previews, site icons and recent-tab history?",
+                    .confirmationDialog("Clear recent tabs, site icons and previews?",
                                         isPresented: $confirmClear) {
                         Button("Clear", role: .destructive) {
                             store.requestClear()
@@ -328,63 +298,42 @@ struct ContentView: View {
                     } message: {
                         Text("This can’t be undone.")
                     }
+            } label: {
+                Text("History")
+                Text(clearRequested ? "Cleared the next time you switch to Safari."
+                                    : "Recent tabs, site icons and previews")
             }
+            Label("Everything stays on this Mac. No network access, no analytics.", systemImage: "lock")
+                .foregroundStyle(.secondary)
         } header: {
-            Text("Stored Data")
+            Text("Privacy")
         } footer: {
-            if clearRequested {
-                Text("TabFlip clears it as soon as you switch to Safari.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private var privacySection: some View {
-        Section {
-            Label("Nothing leaves this Mac. No network requests, no analytics.", systemImage: "lock")
-        } footer: {
-            Text("Close this window when you’re done. TabFlip keeps running without an icon so the shortcuts work, and opens at login. To stop it, choose Quit TabFlip Completely from the TabFlip menu.")
+            Text("You can close this window. Tab Switcher keeps running without an icon and opens at login, so the shortcuts always work. To stop it, choose Tab Switcher › Quit Completely.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
+}
 
-    // MARK: Status text
+/// A setup check: a status symbol, a title with a detail line, and an optional action.
+private struct StatusRow<Trailing: View>: View {
+    let symbol: String
+    let color: Color
+    let title: String
+    let detail: String
+    @ViewBuilder let trailing: Trailing
 
-    private var statusSymbol: String {
-        switch status.state {
-        case .enabled: return "checkmark.circle.fill"
-        case .disabled: return "exclamationmark.circle.fill"
-        case .checking, .unavailable: return "questionmark.circle.fill"
-        }
-    }
-
-    private var statusColor: Color {
-        switch status.state {
-        case .enabled: return .green
-        case .disabled: return .orange
-        case .checking, .unavailable: return .secondary
-        }
-    }
-
-    private var statusTitle: String {
-        switch status.state {
-        case .checking: return "Checking…"
-        case .enabled: return "Extension enabled"
-        case .disabled: return "Extension turned off"
-        case .unavailable: return "Status unavailable"
-        }
-    }
-
-    private var statusDetail: String? {
-        switch status.state {
-        case .checking, .enabled:
-            return nil
-        case .disabled:
-            return "In Safari Settings › Extensions, tick the box next to TabFlip."
-        case .unavailable(let message):
-            return message
+    var body: some View {
+        LabeledContent {
+            trailing
+        } label: {
+            Label {
+                Text(title)
+                Text(detail)
+            } icon: {
+                Image(systemName: symbol).foregroundStyle(color)
+            }
         }
     }
 }
@@ -412,11 +361,11 @@ private struct ShortcutField: View {
         Button {
             recording = isRecording ? nil : slot
         } label: {
-            Text(isRecording ? "Type Shortcut" : ShortcutRules.display(shortcut))
+            Text(isRecording ? "Press keys" : ShortcutRules.display(shortcut))
                 .foregroundStyle(isRecording ? .secondary : .primary)
-                .frame(minWidth: 110)
-                .padding(.vertical, 3)
-                .padding(.horizontal, 8)
+                .frame(minWidth: 72)
+                .padding(.vertical, 2)
+                .padding(.horizontal, 6)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(Color(nsColor: .controlBackgroundColor))

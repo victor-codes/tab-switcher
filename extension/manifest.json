@@ -15,7 +15,8 @@
     "tabs",
     "storage",
     "activeTab",
-    "nativeMessaging"
+    "nativeMessaging",
+    "alarms"
   ],
   "host_permissions": [
     "<all_urls>"

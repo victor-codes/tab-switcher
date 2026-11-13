@@ -1,8 +1,8 @@
 #!/usr/bin/env swift
-// TabFlip icon generator. Not part of any shipped bundle.
+// Tab Switcher icon generator. Not part of any shipped bundle.
 //
-// Draws the TabFlip mark (two stacked tab cards, the front one carrying a
-// "go back" arrow) with CoreGraphics and writes every PNG both targets need:
+// Draws the Tab Switcher mark (a browser window with a tab strip and a pair of
+// switch arrows, on system blue) with CoreGraphics and writes every PNG both targets need:
 //   extension/images/icon-{48,96,128,256,512}.png
 //   TabFlip/Assets.xcassets/AppIcon.appiconset/mac-icon-*.png
 //
@@ -23,21 +23,6 @@ func rgb(_ hex: UInt32, _ alpha: CGFloat = 1) -> CGColor {
             alpha: alpha)
 }
 
-/// A card with a small folder-style tab on its top-left edge, in a top-left
-/// origin coordinate space (the context is flipped before drawing).
-func tabCardPath(_ r: CGRect, radius: CGFloat) -> CGPath {
-    let p = CGMutablePath()
-    let tabW = r.width * 0.42
-    let tabH = r.height * 0.16
-    let tr = radius * 0.7
-    // Tab on top-left, body below it.
-    let body = CGRect(x: r.minX, y: r.minY + tabH, width: r.width, height: r.height - tabH)
-    p.addRoundedRect(in: body, cornerWidth: radius, cornerHeight: radius)
-    let tab = CGRect(x: r.minX, y: r.minY, width: tabW, height: tabH + radius * 2)
-    p.addRoundedRect(in: tab, cornerWidth: tr, cornerHeight: tr)
-    return p
-}
-
 func drawIcon(size: Int, margin: CGFloat) -> CGImage {
     let s = CGFloat(size)
     let cs = CGColorSpace(name: CGColorSpace.sRGB)!
@@ -49,7 +34,7 @@ func drawIcon(size: Int, margin: CGFloat) -> CGImage {
     ctx.translateBy(x: 0, y: s)
     ctx.scaleBy(x: 1, y: -1)
 
-    // Body: rounded square with a diagonal gradient.
+    // Body: rounded square, system-blue vertical gradient.
     let inset = s * margin
     let bodyRect = CGRect(x: inset, y: inset, width: s - inset * 2, height: s - inset * 2)
     let b = bodyRect.width
@@ -58,10 +43,10 @@ func drawIcon(size: Int, margin: CGFloat) -> CGImage {
     ctx.saveGState()
     ctx.addPath(body)
     ctx.clip()
-    let grad = CGGradient(colorsSpace: cs, colors: [rgb(0x2BB5A0), rgb(0x1C6E8C)] as CFArray,
+    let grad = CGGradient(colorsSpace: cs, colors: [rgb(0x4AA8FF), rgb(0x0A63E0)] as CFArray,
                           locations: [0, 1])!
-    ctx.drawLinearGradient(grad, start: CGPoint(x: bodyRect.minX, y: bodyRect.minY),
-                           end: CGPoint(x: bodyRect.maxX, y: bodyRect.maxY), options: [])
+    ctx.drawLinearGradient(grad, start: CGPoint(x: bodyRect.midX, y: bodyRect.minY),
+                           end: CGPoint(x: bodyRect.midX, y: bodyRect.maxY), options: [])
     ctx.restoreGState()
 
     func u(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: bodyRect.minX + x * b, y: bodyRect.minY + y * b) }
@@ -69,40 +54,53 @@ func drawIcon(size: Int, margin: CGFloat) -> CGImage {
         CGRect(x: bodyRect.minX + x * b, y: bodyRect.minY + y * b, width: w * b, height: h * b)
     }
 
-    // Back card (the previous tab): translucent white, up and to the left.
-    ctx.addPath(tabCardPath(ur(0.17, 0.17, 0.50, 0.44), radius: b * 0.06))
-    ctx.setFillColor(rgb(0xFFFFFF, 0.42))
-    ctx.fillPath()
-
-    // Front card (the current tab): solid white, down and to the right.
-    let front = ur(0.33, 0.37, 0.50, 0.46)
+    // Browser window: a white card whose top strip holds two tabs.
+    let window = ur(0.14, 0.20, 0.72, 0.60)
+    let wr = b * 0.075
+    let windowPath = CGPath(roundedRect: window, cornerWidth: wr, cornerHeight: wr, transform: nil)
     ctx.saveGState()
-    ctx.setShadow(offset: CGSize(width: 0, height: -b * 0.012), blur: b * 0.035, color: rgb(0x0B3140, 0.35))
-    ctx.addPath(tabCardPath(front, radius: b * 0.06))
+    ctx.setShadow(offset: CGSize(width: 0, height: -b * 0.015), blur: b * 0.05, color: rgb(0x002A6B, 0.35))
+    ctx.addPath(windowPath)
     ctx.setFillColor(rgb(0xFFFFFF))
     ctx.fillPath()
     ctx.restoreGState()
 
-    // Arrow on the front card: a curve that returns up-left, toward the back card.
-    let lw = b * 0.058
-    ctx.setStrokeColor(rgb(0x1E7F92))
+    // Tab strip: pale blue, with the selected tab (left) cut out in white.
+    let stripH = 0.13
+    ctx.saveGState()
+    ctx.addPath(windowPath)
+    ctx.clip()
+    ctx.setFillColor(rgb(0xD5E6FD))
+    ctx.fill(ur(0.14, 0.20, 0.72, stripH))
+    let tabR = b * 0.035
+    ctx.addPath(CGPath(roundedRect: ur(0.19, 0.245, 0.30, stripH), cornerWidth: tabR, cornerHeight: tabR, transform: nil))
+    ctx.setFillColor(rgb(0xFFFFFF))
+    ctx.fillPath()
+    // Divider on the unselected side.
+    ctx.setFillColor(rgb(0x9DC3F5))
+    ctx.fill(ur(0.665, 0.245, 0.012, 0.05))
+    ctx.restoreGState()
+
+    // Switch arrows: right on top, left below.
+    let lw = b * 0.062
+    ctx.setStrokeColor(rgb(0x0A6CF0))
     ctx.setLineWidth(lw)
     ctx.setLineCap(.round)
     ctx.setLineJoin(.round)
-    let start = u(0.70, 0.72)
-    let end = u(0.47, 0.55)
-    let arc = CGMutablePath()
-    arc.move(to: start)
-    arc.addQuadCurve(to: end, control: u(0.70, 0.55))
-    ctx.addPath(arc)
-    ctx.strokePath()
-    // Arrow head pointing left at `end`.
-    let head = CGMutablePath()
-    head.move(to: CGPoint(x: end.x + b * 0.085, y: end.y - b * 0.075))
-    head.addLine(to: end)
-    head.addLine(to: CGPoint(x: end.x + b * 0.085, y: end.y + b * 0.075))
-    ctx.addPath(head)
-    ctx.strokePath()
+    let head = b * 0.075
+    func arrow(from: CGPoint, to: CGPoint) {
+        let dir: CGFloat = to.x > from.x ? 1 : -1
+        let p = CGMutablePath()
+        p.move(to: from)
+        p.addLine(to: to)
+        p.move(to: CGPoint(x: to.x - dir * head, y: to.y - head))
+        p.addLine(to: to)
+        p.addLine(to: CGPoint(x: to.x - dir * head, y: to.y + head))
+        ctx.addPath(p)
+        ctx.strokePath()
+    }
+    arrow(from: u(0.31, 0.47), to: u(0.69, 0.47))
+    arrow(from: u(0.69, 0.65), to: u(0.31, 0.65))
 
     return ctx.makeImage()!
 }

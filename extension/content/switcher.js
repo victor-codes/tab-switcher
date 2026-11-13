@@ -331,6 +331,29 @@
     true
   );
 
+  // Safari unloads the extension's idle background after about 30 seconds, and a key
+  // press the app sends then is dropped. While this page is the one on screen, a small
+  // message every 20 seconds wakes the background (which reconnects to the app) and
+  // keeps it awake. Top frame only, and only while visible, so it costs next to nothing.
+  if (window.top === window) {
+    const KEEPALIVE_MS = 20_000;
+    let keepalive = null;
+    const ping = () => send({ type: "keepalive" });
+    const syncKeepalive = () => {
+      if (document.visibilityState === "visible") {
+        if (keepalive === null) {
+          ping();
+          keepalive = setInterval(ping, KEEPALIVE_MS);
+        }
+      } else if (keepalive !== null) {
+        clearInterval(keepalive);
+        keepalive = null;
+      }
+    };
+    document.addEventListener("visibilitychange", syncKeepalive);
+    syncKeepalive();
+  }
+
   // ---------------------------------------------------------------------------
   // Messaging
   // ---------------------------------------------------------------------------
