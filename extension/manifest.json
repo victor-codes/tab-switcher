@@ -42,6 +42,13 @@
         "mac": "MacCtrl+W"
       },
       "description": "__MSG_command_close_and_return__"
+    },
+    "probe-ctrl-tab": {
+      "suggested_key": {
+        "default": "Ctrl+Tab",
+        "mac": "MacCtrl+Tab"
+      },
+      "description": "Spike probe only (temporary): does Control-Tab reach the extension?"
     }
   }
 }
