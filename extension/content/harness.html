@@ -1,0 +1,303 @@
+<!doctype html>
+<!--
+  TabFlip switcher harness (dev only, not in manifest).
+  Loads switcher.js in an ordinary tab with a fake `browser` API and a fake
+  background, so the overlay can be exercised without Safari.
+
+  Serve the folder over http (CSP mode needs 'self'):
+    cd extension/content && python3 -m http.server 8765
+    open http://localhost:8765/harness.html
+
+  Query flags (combine freely):
+    ?csp=1        strict page CSP: style-src 'none', img-src data: only
+    ?transform=1  transform + filter on <html> (breaks naive position:fixed)
+    ?hostile=1    aggressive page CSS (div/span/img resets, huge z-index)
+    ?nofocus=1    document.hasFocus() reports false
+
+  Real keys: hold Control and tap Q (fake command fires 10 ms after the Q
+  keydown, like Safari). Release Control to commit. Esc cancels. Arrows move.
+  Buttons simulate the same with synthetic key events.
+  Console API: harness.show(n, variant), harness.move(i), harness.hide(),
+  harness.ctrlDown(), harness.ctrlUp(), harness.state(), harness.log
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TabFlip switcher harness</title>
+<script>
+  // Must run before anything else so the CSP applies to the rest of the page.
+  (function () {
+    var q = new URLSearchParams(location.search);
+    if (q.get("csp") === "1") {
+      document.write(
+        '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'self\' \'unsafe-inline\'; style-src \'none\'; img-src data:">'
+      );
+    }
+  })();
+</script>
+<style>
+  :root { color-scheme: light dark; font: 14px/1.4 -apple-system, system-ui, sans-serif; }
+  body { margin: 0; padding: 16px; background: Canvas; color: CanvasText; }
+  h1 { font-size: 18px; margin: 0 0 8px; }
+  fieldset { border: 1px solid #8884; border-radius: 8px; margin: 0 0 12px; padding: 8px 12px; }
+  legend { font-weight: 600; }
+  button { margin: 2px 4px 2px 0; font: inherit; }
+  #log { font: 12px/1.35 ui-monospace, Menlo, monospace; white-space: pre-wrap; max-height: 40vh; overflow: auto;
+         background: #8881; border-radius: 8px; padding: 8px; }
+  #tab { font-weight: 600; }
+  .filler { height: 120vh; background: repeating-linear-gradient(45deg, #8882 0 20px, transparent 20px 40px); border-radius: 8px; margin-top: 12px; }
+  html.t { transform: translateY(40px) scale(0.9); filter: saturate(1.2); }
+  html.hostile div, html.hostile span, html.hostile img { all: unset !important; color: red !important; font-size: 30px !important; }
+  html.hostile * { z-index: 2147483647 !important; position: relative; }
+  html.hostile tabflip-switcher { display: none !important; opacity: 0 !important; }
+</style>
+<script>
+  // ---------------------------------------------------------------------------
+  // Fake extension API + fake background (mirrors 00-overview.md session flow)
+  // ---------------------------------------------------------------------------
+  (function () {
+    var q = new URLSearchParams(location.search);
+    if (q.get("transform") === "1") document.documentElement.classList.add("t");
+    if (q.get("hostile") === "1") document.documentElement.classList.add("hostile");
+    var noFocus = q.get("nofocus") === "1";
+    var realHasFocus = Document.prototype.hasFocus;
+    document.hasFocus = function () { return noFocus ? false : realHasFocus.call(document); };
+
+    var listeners = [];
+    var logLines = [];
+    function log(s) {
+      var line = new Date().toISOString().slice(11, 23) + "  " + s;
+      logLines.push(line);
+      var el = document.getElementById("log");
+      if (el) { el.textContent = logLines.slice(-200).join("\n"); el.scrollTop = el.scrollHeight; }
+      console.log("[harness] " + s);
+    }
+
+    // Deliver background -> content, exactly like tabs.sendMessage: first listener
+    // that returns a promise (or calls sendResponse and returns true) answers.
+    function deliver(msg) {
+      return new Promise(function (resolve) {
+        var answered = false;
+        function sendResponse(r) { if (!answered) { answered = true; resolve(r); } }
+        for (var i = 0; i < listeners.length; i++) {
+          var ret = listeners[i](msg, { id: "harness" }, sendResponse);
+          if (ret && typeof ret.then === "function") { ret.then(sendResponse); return; }
+          if (ret === true) return;
+        }
+        sendResponse(undefined);
+      });
+    }
+
+    var bg = { session: null, active: 1 };
+    function activate(tabId) {
+      bg.active = tabId;
+      var t = document.getElementById("tab");
+      if (t) t.textContent = String(tabId);
+      log("BG activate tab " + tabId);
+    }
+    function endSession() { bg.session = null; }
+
+    window.browser = {
+      runtime: {
+        onMessage: { addListener: function (fn) { listeners.push(fn); } },
+        sendMessage: function (msg) {
+          log("content -> bg  " + JSON.stringify(msg));
+          if (msg.type === "switcher:commit") { if (bg.session) activate(msg.tabId); endSession(); }
+          else if (msg.type === "switcher:cancel") { log("BG cancel: stay on " + bg.active); endSession(); }
+          return Promise.resolve();
+        },
+      },
+      extension: { inIncognitoContext: false },
+      i18n: { getMessage: function () { return ""; } },
+    };
+
+    window.__tabflipTestHook = function (api) { window.__tabflip = api; };
+
+    function summarize(msg) {
+      if (msg.type !== "switcher:show") return JSON.stringify(msg);
+      return JSON.stringify({ type: msg.type, selectedIndex: msg.selectedIndex, modifiers: msg.modifiers, items: msg.items.length });
+    }
+    function send(msg) {
+      var t0 = performance.now();
+      return deliver(msg).then(function (r) {
+        log("bg -> content  " + summarize(msg) + "  reply " + JSON.stringify(r) + "  (" + (performance.now() - t0).toFixed(1) + " ms)");
+        return r;
+      });
+    }
+
+    // flip command, as the real background does it.
+    function flip(variant, n) {
+      if (bg.session) {
+        bg.session.index = (bg.session.index + 1) % bg.session.items.length;
+        if (bg.session.mode === "overlay") return send({ type: "switcher:move", selectedIndex: bg.session.index });
+        activate(bg.session.items[bg.session.index].tabId);
+        return Promise.resolve();
+      }
+      var items = window.harnessData.items(n || 8, variant || "normal");
+      if (items.length < 2) log("(real background would no-op with < 2 tabs; showing anyway for layout)");
+      var s = { items: items, index: Math.min(1, items.length - 1), mode: null };
+      bg.session = s;
+      return send({ type: "switcher:show", items: items, selectedIndex: s.index, modifiers: ["Control"] }).then(function (r) {
+        if (!r) { s.mode = "fallback"; log("BG: no reply -> fallback"); activate(items[s.index].tabId); }
+        else if (!r.hasFocus) { s.mode = "fallback"; log("BG: hasFocus false -> fallback"); activate(items[s.index].tabId); }
+        else if (!r.modifiersHeld) { log("BG: modifier already released -> commit"); activate(items[s.index].tabId); endSession(); }
+        else { s.mode = "overlay"; log("BG: overlay mode"); }
+        if (s.mode === "fallback") setTimeout(function () { if (bg.session === s) { log("BG: fallback idle timeout"); endSession(); } }, 1000);
+        return r;
+      });
+    }
+
+    function key(type, key, ctrl) {
+      var e = new KeyboardEvent(type, { key: key, code: key === "Control" ? "ControlLeft" : key, ctrlKey: ctrl, bubbles: true, cancelable: true });
+      var target = document.activeElement || document.body || document.documentElement;
+      target.dispatchEvent(e);
+      return e.defaultPrevented;
+    }
+
+    window.harness = {
+      log: logLines,
+      flip: flip,
+      show: function (n, variant) { endSession(); return flip(variant, n); },
+      move: function (i) { if (bg.session) bg.session.index = i; return send({ type: "switcher:move", selectedIndex: i }); },
+      hide: function () { endSession(); return send({ type: "switcher:hide" }); },
+      ctrlDown: function () { return key("keydown", "Control", true); },
+      ctrlUp: function () { return key("keyup", "Control", false); },
+      key: function (k) { var p = key("keydown", k, true); key("keyup", k, true); return p; },
+      setNoFocus: function (v) { noFocus = !!v; },
+      state: function () { return { bg: bg.session && { index: bg.session.index, mode: bg.session.mode }, active: bg.active, content: window.__tabflip && window.__tabflip.state() }; },
+      clearLog: function () { logLines.length = 0; log("log cleared"); },
+    };
+
+    // Real keys: Control+Q fires the fake command ~10 ms after the Q keydown.
+    window.addEventListener("keydown", function (e) {
+      if (e.code === "KeyQ" && e.ctrlKey && !e.repeat && e.isTrusted) {
+        var variant = document.getElementById("variant") ? document.getElementById("variant").value : "normal";
+        var n = document.getElementById("count") ? +document.getElementById("count").value : 8;
+        setTimeout(function () { flip(variant, n); }, 10);
+      }
+    });
+  })();
+
+  // ---------------------------------------------------------------------------
+  // Sample data (no network: previews drawn on a canvas, icons are SVG data URLs)
+  // ---------------------------------------------------------------------------
+  (function () {
+    var hues = [210, 20, 140, 280, 50, 0, 180, 320, 95, 240];
+    function preview(i, label) {
+      var c = document.createElement("canvas");
+      c.width = 480; c.height = 300;
+      var g = c.getContext("2d");
+      var h = hues[i % hues.length];
+      var grad = g.createLinearGradient(0, 0, 480, 300);
+      grad.addColorStop(0, "hsl(" + h + ",70%,92%)");
+      grad.addColorStop(1, "hsl(" + h + ",60%,70%)");
+      g.fillStyle = grad; g.fillRect(0, 0, 480, 300);
+      g.fillStyle = "hsl(" + h + ",50%,35%)"; g.fillRect(0, 0, 480, 36);
+      g.fillStyle = "#fff"; g.font = "bold 18px sans-serif"; g.fillText(label, 14, 24);
+      g.fillStyle = "hsla(" + h + ",40%,30%,.35)";
+      for (var r = 0; r < 7; r++) g.fillRect(14, 56 + r * 30, 300 + ((r * 53) % 140), 14);
+      return c.toDataURL("image/jpeg", 0.6);
+    }
+    function icon(i) {
+      var h = hues[i % hues.length];
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="hsl(' + h +
+        ',65%,50%)"/><circle cx="16" cy="16" r="8" fill="#fff" opacity=".9"/></svg>';
+      return "data:image/svg+xml," + encodeURIComponent(svg);
+    }
+    var base = [
+      ["Inbox (3) — Mail", "mail.example.com"],
+      ["Pull request #482: Fix MRU ordering after tab replace", "github.com"],
+      ["How to make sourdough bread at home", "cooking.example.org"],
+      ["Weather forecast for the week", "weather.example.net"],
+      ["Untitled design", "design.example.com"],
+      ["Quarterly report Q3 — Spreadsheet", "docs.example.com"],
+      ["Documentation: Web Extensions API reference", "developer.example.org"],
+      ["News — Front page", "news.example.co.uk"],
+      ["Music player", "music.example.com"],
+      ["Maps — Directions", "maps.example.com"],
+    ];
+    var long = "An extraordinarily long page title that keeps going and going well past any reasonable card width so it must be truncated with an ellipsis";
+    var rtl = [["مرحبا بالعالم — صفحة تجريبية طويلة العنوان", "ar.example.com"], ["שלום עולם — דף בדיקה", "he.example.co.il"]];
+
+    window.harnessData = {
+      items: function (n, variant) {
+        var out = [];
+        for (var i = 0; i < n; i++) {
+          var b = base[i % base.length];
+          var it = { tabId: 100 + i, title: b[0], host: b[1], icon: icon(i), preview: preview(i, b[1]) };
+          if (variant === "long") { it.title = long + " (" + i + ")"; it.host = "a-very-long-subdomain-name.with-many-parts.example-host-name.com"; }
+          if (variant === "nopreview") { it.preview = null; if (i % 3 === 1) it.icon = null; if (i % 3 === 2) it.icon = "https://127.0.0.1:9/broken.png"; }
+          if (variant === "rtl" && i % 2 === 1) { var r = rtl[(i >> 1) % 2]; it.title = r[0]; it.host = r[1]; }
+          if (variant === "hostile") {
+            it.title = i % 2 ? '<img src=x onerror="alert(1)"> <b>bold?</b>' : "";
+            it.host = i % 4 === 2 ? "" : it.host;
+            it.icon = i % 3 === 0 ? "javascript:alert(1)" : i % 3 === 1 ? "data:text/html,<script>alert(1)<\/script>" : it.icon;
+            it.preview = i % 2 ? "https://example.com/not-a-data-url.jpg" : it.preview;
+          }
+          if (variant === "empty") { it.title = ""; it.host = ""; it.icon = null; it.preview = null; }
+          if (i === 0 && variant !== "hostile") it.title = "(current) " + it.title;
+          out.push(it);
+        }
+        return out;
+      },
+    };
+  })();
+</script>
+<script src="switcher.js"></script>
+</head>
+<body>
+  <h1>TabFlip switcher harness</h1>
+  <p>Active fake tab: <span id="tab">1</span>. Hold <b>Control</b> and tap <b>Q</b> to browse; release to commit; Esc cancels; arrows move.</p>
+
+  <fieldset>
+    <legend>Real-key gesture settings</legend>
+    Items <select id="count"><option>1</option><option>2</option><option>3</option><option>5</option><option>6</option><option selected>8</option><option>16</option></select>
+    Variant <select id="variant">
+      <option value="normal">normal</option><option value="long">long titles</option><option value="nopreview">missing previews / broken icons</option>
+      <option value="rtl">RTL titles</option><option value="hostile">hostile data</option><option value="empty">empty title/host</option>
+    </select>
+  </fieldset>
+
+  <fieldset>
+    <legend>Simulated (synthetic key events)</legend>
+    <button id="b-down">Control down</button>
+    <button id="b-show">Show (uses settings above)</button>
+    <button id="b-flip">Flip (show or move)</button>
+    <button id="b-next">Move +1</button>
+    <button id="b-up">Control up (commit)</button>
+    <button id="b-esc">Esc</button>
+    <button id="b-right">ArrowRight</button>
+    <button id="b-left">ArrowLeft</button>
+    <button id="b-hide">Hide</button>
+    <label><input type="checkbox" id="b-nofocus"> hasFocus() = false</label>
+    <button id="b-clear">Clear log</button>
+  </fieldset>
+
+  <div id="log"></div>
+  <input placeholder="A text field (focus it, then try Control-Q)" style="margin-top:12px;width:320px">
+  <div class="filler"></div>
+
+<script>
+  (function () {
+    function v() { return document.getElementById("variant").value; }
+    function n() { return +document.getElementById("count").value; }
+    function on(id, fn) { document.getElementById(id).addEventListener("click", fn); }
+    // Buttons run on click; keep the click from reaching the overlay logic as a modifier change.
+    on("b-down", function () { harness.ctrlDown(); });
+    on("b-show", function () { harness.show(n(), v()); });
+    on("b-flip", function () { harness.flip(v(), n()); });
+    on("b-next", function () { var s = harness.state(); harness.move(s.bg ? s.bg.index + 1 : 1); });
+    on("b-up", function () { harness.ctrlUp(); });
+    on("b-esc", function () { harness.key("Escape"); });
+    on("b-right", function () { harness.key("ArrowRight"); });
+    on("b-left", function () { harness.key("ArrowLeft"); });
+    on("b-hide", function () { harness.hide(); });
+    on("b-clear", function () { harness.clearLog(); });
+    var nf = document.getElementById("b-nofocus");
+    nf.checked = new URLSearchParams(location.search).get("nofocus") === "1";
+    nf.addEventListener("change", function () { harness.setNoFocus(nf.checked); });
+  })();
+</script>
+</body>
+</html>
