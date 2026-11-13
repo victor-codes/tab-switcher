@@ -200,9 +200,10 @@
 
   // ---------------------------------------------------------------------------
   // Page shortcuts (⌃Tab / ⌃⇧Tab by default, or the user's own; see core/shortcuts.js,
-  // which this mirrors: a content script cannot import). Safari's own commands cannot
-  // be rebound and drop Control-Tab, so these are caught here, on the page, and sent to
-  // the background as `switcher:key`. They work whenever the page has keyboard focus.
+  // which this mirrors: a content script cannot import). Normally the TabFlip app claims
+  // them before Safari or the page sees them; when it isn’t running they are caught here,
+  // on the page, and sent to the background as `switcher:key` (only while the page has
+  // keyboard focus).
   // ---------------------------------------------------------------------------
 
   const DEFAULT_KEYS = {

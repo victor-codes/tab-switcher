@@ -7,18 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5A99CD59EABA4B9BBDA74F28 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C2FDB1D81328B874DF3CE /* Settings.swift */; };
+		94C8C5726315273079463CB3 /* ShortcutAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ADFA39362849F90E241825C /* ShortcutAgent.swift */; };
 		A66738C430A6FD0C0098F1B9 /* TabFlipApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66738C330A6FD0C0098F1B9 /* TabFlipApp.swift */; };
 		A66738D030A6FD0D0098F1B9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66738CF30A6FD0D0098F1B9 /* ContentView.swift */; };
 		A66738D530A6FD0E0098F1B9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A66738D430A6FD0E0098F1B9 /* Assets.xcassets */; };
 		A66738DC30A6FD0E0098F1B9 /* TabFlip Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A66738DB30A6FD0E0098F1B9 /* TabFlip Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A66738E130A6FD0E0098F1B9 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66738E030A6FD0E0098F1B9 /* SafariWebExtensionHandler.swift */; };
-		A66738F430A6FD0E0098F1B9 /* options in Resources */ = {isa = PBXBuildFile; fileRef = A66738ED30A6FD0E0098F1B9 /* options */; };
 		A66738F530A6FD0E0098F1B9 /* core in Resources */ = {isa = PBXBuildFile; fileRef = A66738EE30A6FD0E0098F1B9 /* core */; };
 		A66738F630A6FD0E0098F1B9 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = A66738EF30A6FD0E0098F1B9 /* background.js */; };
 		A66738F730A6FD0E0098F1B9 /* images in Resources */ = {isa = PBXBuildFile; fileRef = A66738F030A6FD0E0098F1B9 /* images */; };
 		A66738F830A6FD0E0098F1B9 /* content in Resources */ = {isa = PBXBuildFile; fileRef = A66738F130A6FD0E0098F1B9 /* content */; };
 		A66738F930A6FD0E0098F1B9 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = A66738F230A6FD0E0098F1B9 /* manifest.json */; };
 		A66738FA30A6FD0E0098F1B9 /* _locales in Resources */ = {isa = PBXBuildFile; fileRef = A66738F330A6FD0E0098F1B9 /* _locales */; };
+		C9539333BD9807CB43D1E7A6 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2E54C36BD1E07C14D6E3699 /* Cocoa.framework */; };
+		F35019D3AF4B41F712FA5196 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C2FDB1D81328B874DF3CE /* Settings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -46,6 +49,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		134C2FDB1D81328B874DF3CE /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		8ADFA39362849F90E241825C /* ShortcutAgent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShortcutAgent.swift; sourceTree = "<group>"; };
+		A2E54C36BD1E07C14D6E3699 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		A66738C030A6FD0C0098F1B9 /* TabFlip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TabFlip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A66738C330A6FD0C0098F1B9 /* TabFlipApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabFlipApp.swift; sourceTree = "<group>"; };
 		A66738CF30A6FD0D0098F1B9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -54,7 +60,6 @@
 		A66738DB30A6FD0E0098F1B9 /* TabFlip Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "TabFlip Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A66738E030A6FD0E0098F1B9 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
 		A66738E230A6FD0E0098F1B9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A66738ED30A6FD0E0098F1B9 /* options */ = {isa = PBXFileReference; lastKnownFileType = folder; name = options; path = ../extension/options; sourceTree = "<group>"; };
 		A66738EE30A6FD0E0098F1B9 /* core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = core; path = ../extension/core; sourceTree = "<group>"; };
 		A66738EF30A6FD0E0098F1B9 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.js; path = ../extension/background.js; sourceTree = "<group>"; };
 		A66738F030A6FD0E0098F1B9 /* images */ = {isa = PBXFileReference; lastKnownFileType = folder; name = images; path = ../extension/images; sourceTree = "<group>"; };
@@ -87,6 +92,7 @@
 				A66738C230A6FD0C0098F1B9 /* TabFlip */,
 				A66738DF30A6FD0E0098F1B9 /* TabFlip Extension */,
 				A66738C130A6FD0C0098F1B9 /* Products */,
+				FB1B4946E7AB2F626D2B062A /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -104,8 +110,10 @@
 			children = (
 				A66738C330A6FD0C0098F1B9 /* TabFlipApp.swift */,
 				A66738CF30A6FD0D0098F1B9 /* ContentView.swift */,
+				134C2FDB1D81328B874DF3CE /* Settings.swift */,
 				A66738D430A6FD0E0098F1B9 /* Assets.xcassets */,
 				A66738D630A6FD0E0098F1B9 /* Info.plist */,
+				8ADFA39362849F90E241825C /* ShortcutAgent.swift */,
 			);
 			path = TabFlip;
 			sourceTree = "<group>";
@@ -123,7 +131,6 @@
 		A66738EC30A6FD0E0098F1B9 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				A66738ED30A6FD0E0098F1B9 /* options */,
 				A66738EE30A6FD0E0098F1B9 /* core */,
 				A66738EF30A6FD0E0098F1B9 /* background.js */,
 				A66738F030A6FD0E0098F1B9 /* images */,
@@ -134,6 +141,22 @@
 			name = Resources;
 			path = "TabFlip Extension";
 			sourceTree = SOURCE_ROOT;
+		};
+		B6480EC1EC77730EBDF92558 /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				A2E54C36BD1E07C14D6E3699 /* Cocoa.framework */,
+			);
+			name = "OS X";
+			sourceTree = "<group>";
+		};
+		FB1B4946E7AB2F626D2B062A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B6480EC1EC77730EBDF92558 /* OS X */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
@@ -153,8 +176,6 @@
 				A66738DE30A6FD0E0098F1B9 /* PBXTargetDependency */,
 			);
 			name = TabFlip;
-			packageProductDependencies = (
-			);
 			productName = TabFlip;
 			productReference = A66738C030A6FD0C0098F1B9 /* TabFlip.app */;
 			productType = "com.apple.product-type.application";
@@ -172,8 +193,6 @@
 			dependencies = (
 			);
 			name = "TabFlip Extension";
-			packageProductDependencies = (
-			);
 			productName = "TabFlip Extension";
 			productReference = A66738DB30A6FD0E0098F1B9 /* TabFlip Extension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -230,7 +249,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A66738F730A6FD0E0098F1B9 /* images in Resources */,
-				A66738F430A6FD0E0098F1B9 /* options in Resources */,
 				A66738F630A6FD0E0098F1B9 /* background.js in Resources */,
 				A66738F530A6FD0E0098F1B9 /* core in Resources */,
 				A66738F930A6FD0E0098F1B9 /* manifest.json in Resources */,
@@ -247,7 +265,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				A66738D030A6FD0D0098F1B9 /* ContentView.swift in Sources */,
+				5A99CD59EABA4B9BBDA74F28 /* Settings.swift in Sources */,
 				A66738C430A6FD0C0098F1B9 /* TabFlipApp.swift in Sources */,
+				94C8C5726315273079463CB3 /* ShortcutAgent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -391,10 +411,11 @@
 		A66738E630A6FD0E0098F1B9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_ENTITLEMENTS = "TabFlip Extension/TabFlip Extension.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4V436AF4L4;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -427,10 +448,11 @@
 		A66738E730A6FD0E0098F1B9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_ENTITLEMENTS = "TabFlip Extension/TabFlip Extension.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4V436AF4L4;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -465,11 +487,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_ENTITLEMENTS = TabFlip/TabFlip.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4V436AF4L4;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
@@ -487,6 +510,8 @@
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
+					"-framework",
+					Carbon,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.tabflip;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -505,11 +530,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_ENTITLEMENTS = TabFlip/TabFlip.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4V436AF4L4;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
@@ -527,6 +553,8 @@
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
+					"-framework",
+					Carbon,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.tabflip;
 				PRODUCT_NAME = "$(TARGET_NAME)";

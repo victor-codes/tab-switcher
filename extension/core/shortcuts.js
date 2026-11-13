@@ -1,9 +1,9 @@
 // TabFlip core/shortcuts.js — the user-chosen switch shortcuts.
 //
 // Safari's `commands` cannot be rebound by an extension and silently drops Control-Tab
-// (SPIKE-RESULTS S2/S3), so these shortcuts are matched by the content script on the page
-// instead. They only work while a web page has keyboard focus; ⌃Q (a Safari command)
-// keeps working everywhere else.
+// (SPIKE-RESULTS S2/S3). So the TabFlip app claims these shortcuts while
+// Safari is in front; the content script also matches them on the page, as a fallback
+// for when the helper isn't running.
 //
 // A shortcut: { ctrl, alt, shift, meta: boolean, code: KeyboardEvent.code }.
 // Matching uses `code` (the physical key) so Option combinations, which change `key`,

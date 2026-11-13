@@ -7,14 +7,6 @@
     "message": "Switch between tabs in most-recently-used order with a keyboard shortcut.",
     "description": "Description of what the extension does."
   },
-  "command_flip": {
-    "message": "Flip to the previously used tab (hold the modifier and tap again to browse recent tabs)",
-    "description": "Description of the flip command."
-  },
-  "command_close_and_return": {
-    "message": "Close the current tab and return to the previously used tab",
-    "description": "Description of the close-and-return command."
-  },
   "switcher_untitled": {
     "message": "Untitled",
     "description": "Shown in the tab switcher for a tab that has neither a title nor a host."

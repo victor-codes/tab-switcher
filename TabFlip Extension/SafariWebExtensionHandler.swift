@@ -2,41 +2,46 @@
 //  SafariWebExtensionHandler.swift
 //  TabFlip Extension
 //
-//  Created by Ayodeji Adedapo on 13/11/2026.
+//  Answers the extension's `browser.runtime.sendNativeMessage` calls. The only request is
+//  { type: "settings:get" }: it replies with what the TabFlip app saved in the shared App
+//  Group, as { settings: {...} | null, clearToken: String | null }. Read-only: the app is
+//  the only writer.
 //
 
 import SafariServices
-import os.log
 
 class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
 
     func beginRequest(with context: NSExtensionContext) {
         let request = context.inputItems.first as? NSExtensionItem
+        let message = request?.userInfo?[SFExtensionMessageKey] as? [String: Any]
 
-        let profile: UUID?
-        if #available(iOS 17.0, macOS 14.0, *) {
-            profile = request?.userInfo?[SFExtensionProfileKey] as? UUID
+        var reply: [String: Any] = [:]
+        if message?["type"] as? String == "settings:get" {
+            let shared = SharedSettings.defaults
+            if let data = shared?.data(forKey: SharedSettings.settingsKey),
+               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                reply["settings"] = object
+            } else {
+                reply["settings"] = NSNull()
+            }
+            reply["clearToken"] = shared?.string(forKey: SharedSettings.clearTokenKey) ?? NSNull()
         } else {
-            profile = request?.userInfo?["profile"] as? UUID
+            reply["error"] = "unknown request"
         }
-
-        let message: Any?
-        if #available(iOS 15.0, macOS 11.0, *) {
-            message = request?.userInfo?[SFExtensionMessageKey]
-        } else {
-            message = request?.userInfo?["message"]
-        }
-
-        os_log(.default, "Received message from browser.runtime.sendNativeMessage: %@ (profile: %@)", String(describing: message), profile?.uuidString ?? "none")
 
         let response = NSExtensionItem()
-        if #available(iOS 15.0, macOS 11.0, *) {
-            response.userInfo = [ SFExtensionMessageKey: [ "echo": message ] ]
-        } else {
-            response.userInfo = [ "message": [ "echo": message ] ]
-        }
-
-        context.completeRequest(returningItems: [ response ], completionHandler: nil)
+        response.userInfo = [SFExtensionMessageKey: reply]
+        context.completeRequest(returningItems: [response], completionHandler: nil)
     }
+}
 
+/// Where the app and the extension share settings. Keep in sync with TabFlip/Settings.swift.
+enum SharedSettings {
+    static let settingsKey = "settings"
+    static let clearTokenKey = "clearToken"
+    static var defaults: UserDefaults? {
+        guard let group = Bundle.main.object(forInfoDictionaryKey: "TabFlipAppGroup") as? String else { return nil }
+        return UserDefaults(suiteName: group)
+    }
 }

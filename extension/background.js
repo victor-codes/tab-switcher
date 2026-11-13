@@ -10,7 +10,8 @@
 
 import * as mru from "./core/mru.js";
 import * as sessions from "./core/session.js";
-import { createQueue, createStore, STATE_KEY } from "./core/store.js";
+import { createQueue, createStore, SETTINGS_KEY, STATE_KEY } from "./core/store.js";
+import { CLEAR_TOKEN_KEY, planSync } from "./core/appsync.js";
 import * as previews from "./core/previews.js";
 import { holdModifiers } from "./core/shortcuts.js";
 
@@ -33,7 +34,7 @@ const shots = previews.createPreviews({
   },
 });
 
-/** The modifier the ⌃Q command uses (MacCtrl = Control). */
+/** Keys held while browsing when an event doesn't say (the default ⌃Tab holds Control). */
 const MODIFIERS = ["Control"];
 /** Icons are small data:image URLs made by the content script (never fetched from here). */
 const MAX_ICON_CHARS = 8192;
@@ -229,9 +230,10 @@ async function syncWindow(state, windowId) {
 }
 
 /**
- * A switch shortcut the content script matched on the page (⌃Tab / ⌃⇧Tab by default, or
- * the user's own). dir 1 = to older tabs, -1 = back. The keys to hold come from the
- * stored shortcuts, never from the page.
+ * A switch shortcut: from the TabFlip app (senderTab null: the active tab of the focused
+ * window), or matched by the content script on the page when the helper isn't running.
+ * dir 1 = to older tabs, -1 = back. The keys to hold come from the stored shortcuts,
+ * never from the page.
  */
 function onPageShortcut(senderTab, dir) {
   job(
@@ -248,22 +250,38 @@ function onPageShortcut(senderTab, dir) {
   );
 }
 
-function onCommand(command, tab) {
-  if (command !== "flip" && command !== "close-and-return") return;
-  job(
-    async (state, settings) => {
-      const t = await resolveTab(tab);
-      if (!t) return;
-      const tabsById = await syncWindow(state, t.windowId);
-      const order = mru.list(state.mru, t.windowId);
-      if (command === "flip") {
-        await reduce(state, { type: "flip", windowId: t.windowId, tabId: t.id }, { settings, order, tabsById });
-      } else {
-        await reduce(state, { type: "closeAndReturn", windowId: t.windowId, tabId: t.id }, { order });
-      }
-    },
-    { settings: command === "flip" }
-  );
+// ---------------------------------------------------------------------------
+// Shortcuts from the TabFlip app
+//
+// Safari won't give an extension ⌃Tab, so the TabFlip app (running in the background) claims
+// the user's shortcuts while Safari is in front and sends each press here through the
+// app: SFSafariApplication.dispatchMessage arrives on a port opened with connectNative.
+//   { name: "flip", userInfo: { dir: 1 | -1 } }   a shortcut was pressed
+//   { name: "release" }                           the held modifier was let go
+
+function onAppMessage(msg) {
+  if (!msg || typeof msg !== "object") return;
+  const name = msg.name ?? msg.type;
+  const info = msg.userInfo && typeof msg.userInfo === "object" ? msg.userInfo : msg;
+  if (name === "flip") onPageShortcut(null, Number(info.dir) === -1 ? -1 : 1);
+  else if (name === "release") job((state) => reduce(state, { type: "release" }));
+}
+
+let appPort = null;
+
+/** Open (or reopen) the port the helper's messages arrive on. */
+function connectApp() {
+  if (appPort || typeof api.runtime.connectNative !== "function") return;
+  try {
+    const port = api.runtime.connectNative("application.id");
+    port.onMessage.addListener(onAppMessage);
+    port.onDisconnect?.addListener(() => {
+      if (appPort === port) appPort = null;
+    });
+    appPort = port;
+  } catch (e) {
+    console.warn("[TabFlip] could not connect to the app", e);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -340,10 +358,46 @@ function onWindowRemoved(windowId) {
 
 function onFocusChanged(windowId) {
   job((state) => reduce(state, { type: "focusChanged", windowId }));
+  // Coming back to Safari, often straight from the TabFlip app: pick up new settings.
+  if (windowId !== api.windows.WINDOW_ID_NONE && windowId !== -1) {
+    syncFromApp();
+    connectApp();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Settings from the TabFlip app (core/appsync.js)
+
+/** Don't ask the app more than once a second (focus changes come in bursts). */
+const SYNC_GAP_MS = 1000;
+let lastSyncAt = -Infinity;
+
+/**
+ * Ask the app's native handler for the settings and copy them into storage.local.
+ * Never blocks event handling; failures (no app, old Safari) leave the stored settings as they are.
+ */
+function syncFromApp() {
+  const now = Date.now();
+  if (now - lastSyncAt < SYNC_GAP_MS) return Promise.resolve();
+  lastSyncAt = now;
+  if (typeof api.runtime.sendNativeMessage !== "function" || !api.storage.local) return Promise.resolve();
+  return Promise.resolve()
+    .then(() => api.runtime.sendNativeMessage("application.id", { type: "settings:get" }))
+    .then(async (reply) => {
+      const got = (await api.storage.local.get([SETTINGS_KEY, CLEAR_TOKEN_KEY])) || {};
+      const plan = planSync(reply, { settings: got[SETTINGS_KEY], clearToken: got[CLEAR_TOKEN_KEY] });
+      if (plan.settings) await api.storage.local.set({ [SETTINGS_KEY]: plan.settings });
+      if (plan.clearToken) {
+        const result = await clearAllData();
+        if (result.ok) await api.storage.local.set({ [CLEAR_TOKEN_KEY]: plan.clearToken });
+      }
+    })
+    .catch((e) => console.warn("[TabFlip] settings sync skipped", e));
 }
 
 function onStartupOrInstalled() {
   job((state) => seedInto(state));
+  syncFromApp();
   removeSpikeData();
   Promise.resolve()
     .then(() => api.tabs.query({}))
@@ -370,7 +424,7 @@ function onStorageChanged(changes, areaName) {
 }
 
 /**
- * data:clear (options page): wipe previews, icons and MRU, then re-seed. Resolves to
+ * data:clear (the app's "Clear…", via syncFromApp; or an extension page): wipe previews, icons and MRU, then re-seed. Resolves to
  * { ok: true } or { ok: false, error } — never undefined, so the page can confirm.
  */
 function clearAllData() {
@@ -457,7 +511,6 @@ function onMessage(msg, sender) {
 // ---------------------------------------------------------------------------
 // Listeners: synchronous, top level, so a stopped worker is woken for them.
 
-api.commands.onCommand.addListener(onCommand);
 api.tabs.onActivated.addListener(onActivated);
 api.tabs.onUpdated?.addListener(onUpdated);
 api.tabs.onCreated.addListener(onCreated);
@@ -471,3 +524,8 @@ api.runtime.onStartup.addListener(onStartupOrInstalled);
 api.runtime.onInstalled.addListener(onStartupOrInstalled);
 api.runtime.onMessage.addListener(onMessage);
 api.storage.onChanged?.addListener(onStorageChanged);
+
+// Each time Safari starts this worker, check the app for changed settings and open the
+// port the app's key presses arrive on.
+syncFromApp();
+connectApp();

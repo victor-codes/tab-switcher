@@ -14,7 +14,8 @@
   "permissions": [
     "tabs",
     "storage",
-    "activeTab"
+    "activeTab",
+    "nativeMessaging"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -34,24 +35,5 @@
       "run_at": "document_start",
       "all_frames": false
     }
-  ],
-  "options_ui": {
-    "page": "options/options.html"
-  },
-  "commands": {
-    "flip": {
-      "suggested_key": {
-        "default": "Ctrl+Q",
-        "mac": "MacCtrl+Q"
-      },
-      "description": "__MSG_command_flip__"
-    },
-    "close-and-return": {
-      "suggested_key": {
-        "default": "Ctrl+W",
-        "mac": "MacCtrl+W"
-      },
-      "description": "__MSG_command_close_and_return__"
-    }
-  }
+  ]
 }
