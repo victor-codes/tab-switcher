@@ -1,14 +1,29 @@
 <!DOCTYPE html>
 <!-- TabFlip options page. Owner: Agent 3. -->
+<!-- TEMPORARY SPIKE RESULTS VIEW (Agent 0, Phase 0). Revert the probe commit(s) to restore the stub. -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TabFlip</title>
+  <title>TabFlip spike probes</title>
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
-  <main id="app"></main>
+  <main id="app">
+    <h1>TabFlip spike probes</h1>
+    <p class="lede">Temporary test page. Work through the steps in each box below, top to bottom. Results are recorded automatically; when you are done, press <b>Copy results</b> and paste them back to the agent. Only site hosts are recorded, never full addresses or anything you type.</p>
+    <div class="bar">
+      <button id="copy" class="primary">Copy results</button>
+      <button id="refresh">Refresh</button>
+      <button id="reset">Reset results</button>
+      <span id="status" role="status"></span>
+    </div>
+    <p id="bg" class="bgstate"></p>
+    <div id="questions"></div>
+    <h2>Raw results</h2>
+    <p class="hint">If "Copy results" does not work, click inside this box, press Command-A then Command-C.</p>
+    <textarea id="raw" readonly rows="14" spellcheck="false"></textarea>
+  </main>
   <script src="options.js"></script>
 </body>
 </html>
