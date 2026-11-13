@@ -28,13 +28,22 @@ function area(shared = {}) {
   return {
     data: shared,
     async get(key) {
-      return key in shared ? { [key]: structuredClone(shared[key]) } : {};
+      const keys = key === null || key === undefined ? Object.keys(shared) : Array.isArray(key) ? key : [key];
+      const out = {};
+      for (const k of keys) if (k in shared) out[k] = structuredClone(shared[k]);
+      return out;
     },
     async set(obj) {
       Object.assign(shared, structuredClone(obj));
     },
+    async remove(key) {
+      for (const k of Array.isArray(key) ? key : [key]) delete shared[k];
+    },
   };
 }
+
+const EXT_BASE = "safari-web-extension://tabflip-uuid/";
+const ICON_A = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
 /**
  * Fake Safari. `tabs`: [{ id, windowId, title, url, active }] in tab-strip order.
@@ -47,12 +56,19 @@ function fakeBrowser({ tabs, content = {}, sessionData = {}, localData = {} }) {
     _focused: tabs[0]?.windowId ?? 1,
     _sent: [],
     _content: content,
-    storage: { session: area(sessionData), local: area(localData) },
-    runtime: { id: "tabflip", onStartup: event(), onInstalled: event(), onMessage: event() },
+    storage: { session: area(sessionData), local: area(localData), onChanged: event() },
+    runtime: {
+      id: "tabflip",
+      getURL: (p) => EXT_BASE + p,
+      onStartup: event(),
+      onInstalled: event(),
+      onMessage: event(),
+    },
     commands: { onCommand: event() },
     windows: { onRemoved: event(), onFocusChanged: event() },
     tabs: {
       onActivated: event(),
+      onUpdated: event(),
       onCreated: event(),
       onRemoved: event(),
       onReplaced: event(),
@@ -154,6 +170,7 @@ test("registers every listener synchronously at load", async () => {
     b.commands.onCommand, b.tabs.onActivated, b.tabs.onCreated, b.tabs.onRemoved, b.tabs.onReplaced,
     b.tabs.onAttached, b.tabs.onDetached, b.windows.onRemoved, b.windows.onFocusChanged,
     b.runtime.onStartup, b.runtime.onInstalled, b.runtime.onMessage,
+    b.tabs.onUpdated, b.storage.onChanged,
   ]) {
     assert.equal(ev.listeners.length, 1);
   }
@@ -203,7 +220,7 @@ test("overlay: show items, move, commit from the content script", async () => {
   const b = fakeBrowser({ tabs: threeTabs(), content });
   const { settle } = await boot(b);
   await settle();
-  b.message({ type: "page:meta", icon: "https://two.example/favicon.ico" }, 2);
+  b.message({ type: "page:meta", icon: ICON_A }, 2);
   await settle();
   b.command("flip");
   await settle();
@@ -213,7 +230,7 @@ test("overlay: show items, move, commit from the content script", async () => {
   assert.deepEqual(show.modifiers, ["Control"]);
   assert.deepEqual(show.items, [
     { tabId: 1, title: "One", host: "one.example", icon: null, preview: null },
-    { tabId: 2, title: "Two", host: "two.example", icon: "https://two.example/favicon.ico", preview: null },
+    { tabId: 2, title: "Two", host: "two.example", icon: ICON_A, preview: null },
     { tabId: 3, title: "Three", host: "", icon: null, preview: null },
   ]);
   assert.equal(b.activeId(), 1, "overlay mode does not switch yet");
@@ -378,7 +395,7 @@ test("page:meta: icons are not stored for private tabs; unknown messages are ign
   const tabs = [...threeTabs(), { id: 7, windowId: 3, incognito: true, url: "https://p.example/", active: true }];
   const b = fakeBrowser({ tabs });
   const { settle } = await boot(b);
-  b.message({ type: "page:meta", icon: "https://p.example/i.png" }, 7);
+  b.message({ type: "page:meta", icon: ICON_A }, 7);
   b.message({ type: "page:meta", icon: "javascript:alert(1)" }, 2);
   b.message({ type: "data:clear" }, 1);
   b.message({ type: "switcher:commit", tabId: 2 }, 1); // no session: ignored
@@ -386,4 +403,131 @@ test("page:meta: icons are not stored for private tabs; unknown messages are ign
   const icons = b.storage.session.data.state.icons;
   assert.deepEqual(icons, {});
   assert.equal(b.activeId(1), 1);
+});
+
+test("page:meta: only small data:image icons are stored (no network URLs, F6)", async () => {
+  const b = fakeBrowser({ tabs: threeTabs() });
+  const { settle } = await boot(b);
+  await settle();
+  const big = "data:image/png;base64," + "A".repeat(9000);
+  for (const icon of ["https://two.example/favicon.ico", "http://two.example/i.png", "data:image/svg+xml,<svg/>", "data:text/html;base64,AAAA", big]) {
+    b.message({ type: "page:meta", icon }, 2);
+    await settle();
+    assert.equal(b.storage.session.data.state.icons[2], undefined, icon.slice(0, 40));
+  }
+  b.message({ type: "page:meta", icon: ICON_A }, 2);
+  await settle();
+  assert.equal(b.storage.session.data.state.icons[2], ICON_A);
+  b.message({ type: "page:meta", icon: null }, 2); // a later page without an icon clears it
+  await settle();
+  assert.equal(b.storage.session.data.state.icons[2], undefined);
+});
+
+/** Send a message as the options page; returns the listener's reply (a promise or undefined). */
+function fromOptions(b, msg, { withTab = false } = {}) {
+  const url = EXT_BASE + "options/options.html";
+  const sender = withTab ? { id: "tabflip", url, tab: { id: 50, windowId: 1, url } } : { id: "tabflip", url };
+  return b.runtime.onMessage.fire(msg, sender)[0];
+}
+
+test("data:clear from the options page wipes previews, icons and MRU, re-seeds, replies ok", async () => {
+  for (const withTab of [false, true]) {
+    const tabs = [
+      { id: 1, windowId: 1, url: "https://a.example/", active: false },
+      { id: 2, windowId: 1, url: "https://b.example/", active: true },
+      { id: 3, windowId: 1, url: "https://c.example/", active: false },
+    ];
+    const sessionData = {
+      "preview:1": { dataUrl: "data:image/jpeg;base64,AAAA", at: 1 },
+      "preview:99": { dataUrl: "data:image/jpeg;base64,BBBB", at: 2 }, // orphan, not in the index
+      previewIndex: { 1: 1 },
+      unrelated: "kept",
+    };
+    const b = fakeBrowser({ tabs, sessionData });
+    const { settle } = await boot(b);
+    b.runtime.onStartup.fire();
+    await settle();
+    await b.tabs.update(3, { active: true });
+    await settle();
+    b.message({ type: "page:meta", icon: ICON_A }, 1);
+    await settle();
+    assert.deepEqual(b.mru(), [3, 2, 1]);
+
+    const reply = await fromOptions(b, { type: "data:clear" }, { withTab });
+    assert.deepEqual(reply, { ok: true }, `withTab=${withTab}`);
+    await settle();
+    const data = b.storage.session.data;
+    assert.equal(data["preview:1"], undefined);
+    assert.equal(data["preview:99"], undefined);
+    assert.equal(data.previewIndex, undefined);
+    assert.equal(data.unrelated, "kept");
+    assert.deepEqual(data.state.icons, {});
+    assert.deepEqual(b.mru(), [3, 1, 2], "re-seeded: active first, then tab-strip order");
+  }
+});
+
+test("data:clear replies { ok: false, error } when storage fails, and is refused from content scripts", async () => {
+  const b = fakeBrowser({ tabs: threeTabs() });
+  const { settle } = await boot(b);
+  await settle();
+  assert.equal(b.runtime.onMessage.fire({ type: "data:clear" }, { id: "tabflip", url: "https://one.example/a", tab: b.tab(1) })[0], undefined);
+  const set = b.storage.session.set;
+  b.storage.session.set = async () => {
+    throw new Error("quota exceeded");
+  };
+  const reply = await fromOptions(b, { type: "data:clear" });
+  b.storage.session.set = set;
+  assert.equal(reply.ok, false);
+  assert.equal(typeof reply.error, "string");
+  assert.match(reply.error, /quota/);
+});
+
+test("turning previews off deletes stored previews; startup prunes closed tabs and spike data", async () => {
+  const sessionData = {
+    "preview:1": { dataUrl: "data:image/jpeg;base64,AAAA", at: 1 },
+    "preview:42": { dataUrl: "data:image/jpeg;base64,BBBB", at: 2 },
+    previewIndex: { 1: 1, 42: 2 },
+    spikeSession: { x: 1 },
+  };
+  const localData = { spike: { v: 1 }, spike_hb: {}, spike_notes: {}, spike_cfg: {}, settings: { previews: true } };
+  const b = fakeBrowser({ tabs: threeTabs(), sessionData, localData });
+  const { settle } = await boot(b);
+  b.runtime.onStartup.fire();
+  await settle();
+  await sleep(5);
+  await settle();
+  assert.deepEqual(Object.keys(localData).sort(), ["settings"]);
+  assert.equal(sessionData.spikeSession, undefined);
+  assert.equal(sessionData["preview:42"], undefined, "tab 42 no longer exists");
+  assert.ok(sessionData["preview:1"]);
+  assert.deepEqual(sessionData.previewIndex, { 1: 1 });
+
+  b.storage.onChanged.fire({ settings: { oldValue: { previews: true }, newValue: { previews: false } } }, "local");
+  await sleep(5);
+  assert.equal(sessionData["preview:1"], undefined);
+  assert.equal(sessionData.previewIndex, undefined);
+});
+
+test("switcher:show carries stored previews (one batched read) and none when previews are off", async () => {
+  const replies = [];
+  const content = { 1: (m) => (replies.push(m), m.type === "switcher:show" ? { ok: true, hasFocus: true, modifiersHeld: true } : { ok: true }) };
+  const stored = () => ({ "preview:2": { dataUrl: "data:image/jpeg;base64,QUJD", at: 1 }, previewIndex: { 2: 1 } });
+  const b = fakeBrowser({ tabs: threeTabs(), content, sessionData: stored() });
+  const gets = [];
+  const get = b.storage.session.get;
+  b.storage.session.get = (k) => (gets.push(k), get(k));
+  const { settle } = await boot(b);
+  await settle();
+  gets.length = 0;
+  b.command("flip");
+  await settle();
+  assert.deepEqual(replies[0].items.map((i) => i.preview), [null, "data:image/jpeg;base64,QUJD", null]);
+  assert.equal(gets.filter((k) => Array.isArray(k)).length, 1, "one storage.get for all previews");
+
+  const b2 = fakeBrowser({ tabs: threeTabs(), content, sessionData: stored(), localData: { settings: { previews: false } } });
+  replies.length = 0;
+  const two = await boot(b2);
+  b2.command("flip");
+  await two.settle();
+  assert.deepEqual(replies[0].items.map((i) => i.preview), [null, null, null]);
 });

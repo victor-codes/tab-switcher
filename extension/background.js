@@ -10,16 +10,37 @@
 
 import * as mru from "./core/mru.js";
 import * as sessions from "./core/session.js";
-import { createQueue, createStore } from "./core/store.js";
-import * as previews from "./core/previews.js"; // Agent 4; may still export nothing.
+import { createQueue, createStore, STATE_KEY } from "./core/store.js";
+import * as previews from "./core/previews.js";
 
 const api = globalThis.browser;
-const store = createStore(api.storage.session ?? api.storage.local, api.storage.local);
+const stateArea = api.storage.session ?? api.storage.local;
+const store = createStore(stateArea, api.storage.local);
 const queue = createQueue();
+
+/**
+ * Previews run on their own serial queue (core/previews.js) so a capture never delays a
+ * command. A capture is skipped while a switch session is running.
+ */
+const shots = previews.createPreviews({
+  area: stateArea,
+  tabs: api.tabs,
+  loadSettings: () => store.loadSettings(),
+  isSessionActive: async () => {
+    const { state } = await store.load();
+    return !!state.session && !sessions.isStale(state.session, Date.now());
+  },
+});
 
 /** The modifier the default shortcuts use (MacCtrl = Control). */
 const MODIFIERS = ["Control"];
-const MAX_ICON_URL_LENGTH = 4096;
+/** Icons are small data:image URLs made by the content script (never fetched from here). */
+const MAX_ICON_CHARS = 8192;
+/** Longest the switcher:show path waits for stored previews before sending without them. */
+const PREVIEW_BUDGET_MS = 60;
+/** Storage keys left behind by the Phase 0 spike probe. */
+const SPIKE_LOCAL_KEYS = ["spike", "spike_hb", "spike_notes", "spike_cfg"];
+const SPIKE_SESSION_KEYS = ["spikeSession"];
 
 let idleTimer = null;
 
@@ -123,34 +144,26 @@ async function sendWithTimeout(tabId, msg, ms) {
   return { timedOut: false, reply: rejected ? undefined : result };
 }
 
-async function previewOf(tabId) {
-  try {
-    const p = await previews.getPreview?.(tabId);
-    return typeof p === "string" ? p : null;
-  } catch {
-    return null;
-  }
-}
-
-async function buildItems(state, order, tabsById) {
-  return Promise.all(
-    order.map(async (tabId) => {
-      const t = tabsById?.get(tabId);
-      return {
-        tabId,
-        title: typeof t?.title === "string" ? t.title : "",
-        host: hostOf(t?.url),
-        icon: state.icons[tabId] ?? null,
-        preview: await previewOf(tabId),
-      };
-    })
-  );
+async function buildItems(state, order, tabsById, settings) {
+  // One storage read for every preview, bounded so a slow read never delays the overlay.
+  const shotById = settings?.previews === false ? {} : await shots.getMany(order, { budgetMs: PREVIEW_BUDGET_MS });
+  return order.map((tabId) => {
+    const t = tabsById?.get(tabId);
+    const icon = state.icons[tabId];
+    return {
+      tabId,
+      title: typeof t?.title === "string" ? t.title : "",
+      host: hostOf(t?.url),
+      icon: validIcon(icon) ? icon : null,
+      preview: shotById[tabId] ?? null,
+    };
+  });
 }
 
 async function perform(state, eff, ctx) {
   switch (eff.type) {
     case "show": {
-      const items = await buildItems(state, eff.order, ctx.tabsById);
+      const items = await buildItems(state, eff.order, ctx.tabsById, ctx.settings);
       const msg = { type: "switcher:show", items, selectedIndex: eff.selectedIndex, modifiers: MODIFIERS };
       const r = await sendWithTimeout(eff.tabId, msg, eff.ackTimeoutMs);
       return r.timedOut ? { type: "ackTimeout", token: eff.token } : { type: "ack", token: eff.token, reply: r.reply };
@@ -238,6 +251,13 @@ function onCommand(command, tab) {
 function onActivated(info) {
   if (!info || !isId(info.tabId) || !isId(info.windowId)) return;
   job((state) => reduce(state, { type: "activated", windowId: info.windowId, tabId: info.tabId }));
+  shots.schedule(info.tabId, info.windowId);
+}
+
+function onUpdated(tabId, change, tab) {
+  // The active tab finished loading: refresh its preview.
+  if (change?.status !== "complete" || !tab?.active || !isId(tab.windowId)) return;
+  shots.schedule(tabId, tab.windowId);
 }
 
 function onCreated(tab) {
@@ -247,6 +267,7 @@ function onCreated(tab) {
     if (tab.active) {
       // Safari sends no onActivated for a tab created already active.
       await reduce(state, { type: "activated", windowId: tab.windowId, tabId: tab.id });
+      shots.schedule(tab.id, tab.windowId);
     } else {
       state.mru = mru.created(state.mru, tab.windowId, tab.id);
     }
@@ -259,6 +280,7 @@ function onRemoved(tabId, info) {
     delete state.icons[tabId];
     await reduce(state, { type: "external", reason: "removed" });
   });
+  shots.remove(tabId);
 }
 
 function onReplaced(addedTabId, removedTabId) {
@@ -301,22 +323,91 @@ function onFocusChanged(windowId) {
 
 function onStartupOrInstalled() {
   job((state) => seedInto(state));
+  removeSpikeData();
+  Promise.resolve()
+    .then(() => api.tabs.query({}))
+    .then((tabs) => shots.prune(tabs.map((t) => t.id)))
+    .catch((e) => console.warn("[TabFlip] preview prune skipped", e));
+}
+
+/** One-off cleanup of what the Phase 0 spike probe stored. */
+function removeSpikeData() {
+  Promise.resolve()
+    .then(() =>
+      Promise.all([api.storage.local?.remove?.(SPIKE_LOCAL_KEYS), api.storage.session?.remove?.(SPIKE_SESSION_KEYS)])
+    )
+    .catch(() => undefined);
+}
+
+function onStorageChanged(changes, areaName) {
+  // Turning previews off deletes the stored pictures (the options page promises this).
+  if (areaName !== "local" || !changes?.settings) return;
+  const next = changes.settings.newValue;
+  if (next && typeof next === "object" && next.previews === false) {
+    shots.clearAll().catch((e) => console.warn("[TabFlip] clearing previews failed", e));
+  }
+}
+
+/**
+ * data:clear (options page): wipe previews, icons and MRU, then re-seed. Resolves to
+ * { ok: true } or { ok: false, error } — never undefined, so the page can confirm.
+ */
+function clearAllData() {
+  return new Promise((resolve) => {
+    job(async (state) => {
+      try {
+        await shots.clearAll();
+        if (state.session) await reduce(state, { type: "external", reason: "clear" });
+        state.session = null;
+        state.mru = mru.empty();
+        state.icons = {};
+        await seedInto(state);
+        // Write directly (store.save only logs failures): the reply must reflect reality.
+        await stateArea.set({ [STATE_KEY]: state });
+        resolve({ ok: true });
+      } catch (e) {
+        resolve({ ok: false, error: String((e && e.message) || e || "unknown error") });
+      }
+    }).then(() => resolve({ ok: false, error: "the background could not load its state" }));
+  });
 }
 
 // ---------------------------------------------------------------------------
 // Messages from content scripts
 
+/** Only small inline raster icons are stored or shown: an icon never causes a request. */
 function validIcon(icon) {
   return (
     typeof icon === "string" &&
-    icon.length <= MAX_ICON_URL_LENGTH &&
-    /^(https?:|data:image\/)/i.test(icon)
+    icon.length <= MAX_ICON_CHARS &&
+    /^data:image\/(png|jpeg|gif|webp);base64,[a-z0-9+/]+=*$/i.test(icon)
   );
 }
 
+/**
+ * True for our own extension pages (the options page). Safari may or may not attach
+ * `sender.tab` for an options page shown in a tab, so decide by the sender's URL.
+ */
+function isExtensionPage(sender) {
+  let base = "";
+  try {
+    base = typeof api.runtime.getURL === "function" ? api.runtime.getURL("") : "";
+  } catch {
+    base = "";
+  }
+  const url = typeof sender.url === "string" ? sender.url : sender.tab?.url;
+  if (base && typeof url === "string") return url.startsWith(base);
+  return !sender.tab; // nothing to go by: only extension pages send without a tab
+}
+
 function onMessage(msg, sender) {
-  if (!msg || typeof msg.type !== "string" || !sender || !sender.tab) return undefined;
+  if (!msg || typeof msg.type !== "string" || !sender) return undefined;
   if (sender.id && api.runtime.id && sender.id !== api.runtime.id) return undefined;
+  if (msg.type === "data:clear") {
+    // The returned promise is the reply (both reply styles work in Safari; measured).
+    return isExtensionPage(sender) ? clearAllData() : undefined;
+  }
+  if (!sender.tab) return undefined;
   const senderTab = sender.tab;
   switch (msg.type) {
     case "switcher:commit":
@@ -336,7 +427,7 @@ function onMessage(msg, sender) {
     default:
       break;
   }
-  return undefined; // no reply to any message
+  return undefined; // no reply to content-script messages
 }
 
 // ---------------------------------------------------------------------------
@@ -344,6 +435,7 @@ function onMessage(msg, sender) {
 
 api.commands.onCommand.addListener(onCommand);
 api.tabs.onActivated.addListener(onActivated);
+api.tabs.onUpdated?.addListener(onUpdated);
 api.tabs.onCreated.addListener(onCreated);
 api.tabs.onRemoved.addListener(onRemoved);
 api.tabs.onReplaced.addListener(onReplaced);
@@ -354,3 +446,4 @@ api.windows.onFocusChanged.addListener(onFocusChanged);
 api.runtime.onStartup.addListener(onStartupOrInstalled);
 api.runtime.onInstalled.addListener(onStartupOrInstalled);
 api.runtime.onMessage.addListener(onMessage);
+api.storage.onChanged?.addListener(onStorageChanged);
