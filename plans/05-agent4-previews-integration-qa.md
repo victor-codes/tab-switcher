@@ -8,9 +8,10 @@ Only if spike S6 says capture works; otherwise skip to integration and record pr
 
 - Capture the visible tab of the focused window ~600 ms after it becomes active and again when the active tab finishes loading (`tabs.onUpdated` status `complete`), debounced, at most one capture per tab per 5 s. Also capture the origin tab at session start if it has none.
 - Never capture: private tabs, while a switch session is active (the overlay would be in the picture), or when `settings.previews` is false.
-- Downscale to 480 px wide JPEG (quality ~0.6) in the background using the mechanism the spike confirmed. Store in IndexedDB keyed by tab id with a timestamp; cap at 60 entries, evict least recently captured; delete on `tabs.onRemoved` and on startup for ids that no longer exist.
+- Only capture when `tab.url` is present and `status` is `complete` (measured: otherwise it fails or yields a blank image).
+- Downscale to 480 px wide JPEG (quality ~0.6) with `createImageBitmap` + `OffscreenCanvas` (measured to work, a few ms). Store in `browser.storage.session` under one key per tab (`preview:<tabId>`, value `{ dataUrl, at }`) — not inside the main state object, so the wake path stays small, and not on disk, so previews vanish when Safari quits. Cap at 60 entries, evict least recently captured; delete on `tabs.onRemoved` and on startup for ids that no longer exist.
 - `getPreview(tabId) -> Promise<string | null>` returns a data URL; this is the hook Agent 1 left in `background.js`.
-- Implement `data:clear` (wipe IndexedDB previews, stored icons and MRU, then re-seed) and react to `previews` being switched off by wiping previews.
+- Implement `data:clear` (wipe stored previews, stored icons and MRU, then re-seed) and react to `previews` being switched off by wiping previews.
 - Budget: building the `switcher:show` payload must not push the ack past the timeout. If attaching previews is slow, send `show` without previews and follow with a `switcher:previews` message (`{ previews: { [tabId]: dataUrl } }`) — add it to the contract in `00-overview.md` and to the content script.
 
 ## Integration

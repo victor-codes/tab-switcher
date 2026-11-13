@@ -53,14 +53,31 @@ tabflip/
 
 Two agents never edit the same file. Phase 0 creates stub files for every path referenced by `manifest.json` so later agents only fill in bodies.
 
-### Shortcuts (defaults, to be confirmed by the spike)
+### Measured Safari behaviour (spike run 1 — see `SPIKE-RESULTS.md`)
+
+These are facts, not assumptions; design to them.
+
+- **Cold starts are normal.** The background is stopped ~29 s after its last event; timers do not keep it alive. `storage.session` survives. Events restart it and are delivered. Keep nothing in memory across events and keep the wake path short (one `storage.session` read before acting).
+- **`tabs.onActivated` does not fire for a tab created already active.** Treat `tabs.onCreated` with `active: true` as an activation.
+- **Opening an extension page fires create → create(`windowId: -1`) → `onReplaced` → `onRemoved`.** Ignore `onCreated` with `windowId: -1`; `onReplaced` moves the old id's MRU position to the new id.
+- **`tab.url` is absent** for empty tabs and for restored tabs that have not loaded. `Item.host` is then `""`; never assume a URL.
+- **No content script → instant empty reply.** `tabs.sendMessage` to such a tab resolves in ~1 ms with `undefined` (no rejection). Treat `undefined` or a rejection as "no content script" and go to fallback at once; the ack timer only guards a slow page.
+- **`tab.favIconUrl` never exists.** Icons come only from `page:meta`.
+- **`captureVisibleTab` works without a user gesture** (7–18 ms; downscale with `createImageBitmap` + `OffscreenCanvas` 3–10 ms; a 320 px JPEG is 2–10 KB). It fails when `tab.url` is absent and returns a blank image while `status` is `loading`.
+- **Module service worker loads**; static imports work. No `window`/`document` in the background.
+- **Safari silently drops a `MacCtrl+Tab` command**, and `commands.update` does not exist.
+- The command's `tab` argument is populated and matches the active tab of the current window.
+
+Still unverified (do not build on these without a caveat): the shortcut on a loaded website and in a text field; modifier `keyup` reaching the content script after a command (the basis of F2); message latency on a real page; attach/detach, Tab Groups, profiles, private windows.
+
+### Shortcuts (defaults; `MacCtrl+Q` confirmed on non-web pages)
 
 | Command id | Default (mac) | Feature |
 |---|---|---|
 | `flip` | `MacCtrl+Q` | F1/F2 |
 | `close-and-return` | `MacCtrl+W` | F3 |
 
-Control-Tab is the ideal key but Safari reserves it; the spike measures whether it can be claimed. If not, it stays out of v1 (see Phase 3 in `05`).
+Control-Tab cannot be claimed through `commands` (measured). It stays out of v1 (see Phase 3 in `05`).
 
 ### MRU model (`core/mru.js`)
 
@@ -82,7 +99,7 @@ flip command, no session:
   ask content script of the active tab to show (message below, 150 ms ack timeout)
     ack {ok:true, modifiersHeld:true}  -> mode = overlay (overlay is drawn instantly, no display delay)
     ack {ok:true, modifiersHeld:false} -> commit immediately (key already released; nothing to draw)
-    no ack / error                     -> mode = fallback
+    undefined reply / rejection / timeout -> mode = fallback (undefined arrives in ~1 ms)
 flip command, session active:
   index = (index + 1) % order.length
   overlay  -> send switcher:move
