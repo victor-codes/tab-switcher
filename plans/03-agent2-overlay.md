@@ -5,7 +5,7 @@ Read `00-overview.md` and `SPIKE-RESULTS.md` first. You own `extension/content/s
 ## Behaviour
 
 1. **Passive modifier tracking** from `document_start`: capture-phase `keydown`/`keyup`/`blur` listeners on `window` maintain the set of currently held modifiers. Never call `preventDefault` or stop propagation outside an active overlay. Do nothing else until a message arrives — zero DOM changes on pages that never use the switcher.
-2. **`switcher:show`**: reply `{ ok: true, modifiersHeld }` synchronously, where `modifiersHeld` means every key in `msg.modifiers` is currently down. If not held, do not render (the background commits). If held, render the overlay immediately, in the same task as the reply — no display delay, no timers before first paint.
+2. **`switcher:show`**: reply `{ ok: true, hasFocus, modifiersHeld }` synchronously, where `hasFocus` is `document.hasFocus()` and `modifiersHeld` means every key in `msg.modifiers` is currently down. If either is false, do not render (the background falls back or commits). If held, render the overlay immediately, in the same task as the reply — no display delay, no timers before first paint.
 3. **`switcher:move`**: update the selection, scroll it into view.
 4. **`switcher:hide`**: remove the overlay.
 5. **Commit** with `items[selectedIndex].tabId` when: the last required modifier is released; a row is clicked; the window blurs or the document becomes hidden while shown.

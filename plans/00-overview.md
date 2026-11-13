@@ -68,7 +68,10 @@ These are facts, not assumptions; design to them.
 - **Safari silently drops a `MacCtrl+Tab` command**, and `commands.update` does not exist.
 - The command's `tab` argument is populated and matches the active tab of the current window.
 
-Still unverified (do not build on these without a caveat): the shortcut on a loaded website and in a text field; modifier `keyup` reaching the content script after a command (the basis of F2); message latency on a real page; attach/detach, Tab Groups, profiles, private windows.
+- **Hold-to-browse works (run 2).** On a focused page the content script sees the shortcut's own `keydown`s, knows Control is held when the `show` message arrives (1–2 ms after the command), and receives the Control `keyup` on release. `getModifierState` is reliable. Message round trip is ≤ 1 ms.
+- **If the page does not have focus (e.g. the address bar does), the command still fires but the page sees no key events and no `keyup`.** The content script reports `hasFocus`; without focus the background uses fallback mode.
+
+Still unverified (QA matrix): a text field inside the page focused; attach/detach, Tab Groups, profiles, private windows; shortcut rebinding UI.
 
 ### Shortcuts (defaults; `MacCtrl+Q` confirmed on non-web pages)
 
@@ -97,8 +100,9 @@ flip command, no session:
   order = list(window); if order.length < 2 -> no-op
   index = 1
   ask content script of the active tab to show (message below, 150 ms ack timeout)
-    ack {ok:true, modifiersHeld:true}  -> mode = overlay (overlay is drawn instantly, no display delay)
-    ack {ok:true, modifiersHeld:false} -> commit immediately (key already released; nothing to draw)
+    ack {ok:true, hasFocus:false}                      -> mode = fallback (page cannot see the keys; it draws nothing)
+    ack {ok:true, hasFocus:true,  modifiersHeld:true}  -> mode = overlay (overlay is drawn instantly, no display delay)
+    ack {ok:true, hasFocus:true,  modifiersHeld:false} -> commit immediately (key already released; nothing to draw)
     undefined reply / rejection / timeout -> mode = fallback (undefined arrives in ~1 ms)
 flip command, session active:
   index = (index + 1) % order.length
@@ -120,7 +124,7 @@ Background → content (`tabs.sendMessage(tabId, msg)`), content replies with th
 
 | `type` | Payload | Response |
 |---|---|---|
-| `switcher:show` | `items: Item[]`, `selectedIndex: number`, `modifiers: string[]` (e.g. `["Control"]`) | `{ ok: true, modifiersHeld: boolean }` |
+| `switcher:show` | `items: Item[]`, `selectedIndex: number`, `modifiers: string[]` (e.g. `["Control"]`) | `{ ok: true, hasFocus: boolean, modifiersHeld: boolean }` — `hasFocus` is `document.hasFocus()`; the overlay is rendered only when both are true |
 | `switcher:move` | `selectedIndex: number` | `{ ok: true }` |
 | `switcher:hide` | — | `{ ok: true }` |
 
@@ -131,6 +135,7 @@ Content → background (`runtime.sendMessage`):
 | `switcher:commit` | `tabId: number` | modifier released, row clicked, or page lost focus while shown |
 | `switcher:cancel` | — | Esc |
 | `page:meta` | `icon: string \| null` (absolute URL of best `<link rel~=icon>`) | sent once at `document_idle` |
+| `data:clear` | — | from the options page: wipe previews, icons and MRU, then re-seed (handler implemented by Agent 4) |
 
 `Item = { tabId: number, title: string, host: string, icon: string | null, preview: string | null /* data: URL */ }`. `items` is capped at the setting `maxItems` (default 8) and is in frozen MRU order; `items[0]` is the current tab.
 

@@ -1,6 +1,6 @@
 # TabFlip spike results (Phase 0)
 
-Status: **run 1 analysed** (export of 2026-11-13 08:26 UTC, macOS 27.2, Safari 27.2). Seven questions are answered, four are still open because the shortcut was never pressed on a loaded website during run 1 (every `flip` fired on the probe page, an empty tab, the Start Page or a still-loading tab). The open ones are marked **unverified**.
+Status: **spike complete** (runs of 2026-11-13 08:26 and 08:34 UTC, macOS 27.2, Safari 27.2). The table and sections S1–S11 below describe run 1; the "Run 2" section near the end supersedes S1, S4 and S5. Phase 1 is released. Items still marked **unverified** are secondary and move to the QA matrix.
 
 | # | Status | Answer in one line |
 |---|---|---|
@@ -80,7 +80,23 @@ Not exercised: `onAttached` / `onDetached` (no tab was dragged between windows),
 
 `extension.isAllowedIncognitoAccess()` returned false; no private tab appeared in any snapshot. Whether the extension can be enabled for Private Browsing and what it sees there: **unverified**.
 
-## Still to run (about one minute)
+## Run 2 (export of 2026-11-13 08:34 UTC) — closes S1, S4, S5
+
+Three Control-Q presses on a fully loaded website (content script reachable each time).
+
+- **S1 — answered for websites.** The command fires on a loaded page. Not yet exercised with a text field *inside the page* focused (**unverified**, low risk).
+- **S4 — answered: hold-to-browse is feasible.**
+  - At message time the content script already knew Control was held (`trackedCtrlHeld: true`) and had seen the Q `keydown` 9–11 ms earlier. The page receives the shortcut's own key events.
+  - The Control `keyup` arrived in both samples: 333 ms after the message (quick tap) and 2147 ms after (deliberate hold). `getModifierState("Control")` was correct on every event.
+  - The command message reached the content script 1–2 ms after the command fired.
+- **Focus outside the page.** In the third press the document did not have focus (`documentHasFocus: false`, e.g. the address bar): the command still fired, but the page saw no key events at all and no `keyup` ever arrived. The content script must report focus, and the background must use fallback mode when the page is not focused.
+- **S5 — answered.** 60 round trips: median 0–0.5 ms, max 1 ms, none over 150 ms, no errors. Both reply styles work (returned promise and `sendResponse`). The 150 ms ack timeout is far more than enough.
+- **S6** again: capture 15–28 ms, same downscale cost.
+- **S2**: still no Control-Tab `keydown` recorded and no labelled press; unchanged (**unverified**, out of v1 scope).
+
+Remaining unverified items go to the Phase 2 QA matrix: in-page text field, attach/detach, Tab Groups, profiles, private windows, shortcut rebinding UI.
+
+## Run-1 re-test request (done — kept for the record)
 
 On a fully loaded ordinary website (not the probe page, Start Page or an empty tab):
 
