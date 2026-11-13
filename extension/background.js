@@ -12,6 +12,7 @@ import * as mru from "./core/mru.js";
 import * as sessions from "./core/session.js";
 import { createQueue, createStore, STATE_KEY } from "./core/store.js";
 import * as previews from "./core/previews.js";
+import { holdModifiers } from "./core/shortcuts.js";
 
 const api = globalThis.browser;
 const stateArea = api.storage.session ?? api.storage.local;
@@ -32,7 +33,7 @@ const shots = previews.createPreviews({
   },
 });
 
-/** The modifier the default shortcuts use (MacCtrl = Control). */
+/** The modifier the ⌃Q command uses (MacCtrl = Control). */
 const MODIFIERS = ["Control"];
 /** Icons are small data:image URLs made by the content script (never fetched from here). */
 const MAX_ICON_CHARS = 8192;
@@ -164,7 +165,7 @@ async function perform(state, eff, ctx) {
   switch (eff.type) {
     case "show": {
       const items = await buildItems(state, eff.order, ctx.tabsById, ctx.settings);
-      const msg = { type: "switcher:show", items, selectedIndex: eff.selectedIndex, modifiers: MODIFIERS };
+      const msg = { type: "switcher:show", items, selectedIndex: eff.selectedIndex, modifiers: eff.modifiers ?? MODIFIERS };
       const r = await sendWithTimeout(eff.tabId, msg, eff.ackTimeoutMs);
       return r.timedOut ? { type: "ackTimeout", token: eff.token } : { type: "ack", token: eff.token, reply: r.reply };
     }
@@ -225,6 +226,26 @@ async function syncWindow(state, windowId) {
   }
   if (tabs.length) state.mru = mru.syncWindow(state.mru, windowId, tabs);
   return new Map(tabs.map((t) => [t.id, t]));
+}
+
+/**
+ * A switch shortcut the content script matched on the page (⌃Tab / ⌃⇧Tab by default, or
+ * the user's own). dir 1 = to older tabs, -1 = back. The keys to hold come from the
+ * stored shortcuts, never from the page.
+ */
+function onPageShortcut(senderTab, dir) {
+  job(
+    async (state, settings) => {
+      const t = await resolveTab(senderTab);
+      if (!t) return;
+      const tabsById = await syncWindow(state, t.windowId);
+      const order = mru.list(state.mru, t.windowId);
+      const { next, prev } = settings.shortcuts;
+      const modifiers = holdModifiers(next, prev);
+      await reduce(state, { type: "flip", windowId: t.windowId, tabId: t.id, dir, modifiers }, { settings, order, tabsById });
+    },
+    { settings: true }
+  );
 }
 
 function onCommand(command, tab) {
@@ -412,6 +433,9 @@ function onMessage(msg, sender) {
   switch (msg.type) {
     case "switcher:commit":
       job((state) => reduce(state, { type: "commit", senderTabId: senderTab.id, tabId: msg.tabId }));
+      break;
+    case "switcher:key":
+      onPageShortcut(senderTab, msg.dir === -1 ? -1 : 1);
       break;
     case "switcher:cancel":
       job((state) => reduce(state, { type: "cancel", senderTabId: senderTab.id }));

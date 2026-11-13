@@ -457,3 +457,32 @@ test("unknown events and a missing ctx do not throw", () => {
   assert.deepEqual(step(null, null), { session: null, effects: [] });
   assert.deepEqual(step(null, { type: "flip", windowId: W, tabId: 1 }).effects, []);
 });
+
+test("page shortcut: backward starts on the oldest tab, carries its hold modifiers, and walks both ways", () => {
+  const s = sim([1, 2, 3, 4]);
+  s.dispatch({ type: "flip", windowId: W, tabId: 1, dir: -1, modifiers: ["Alt"] });
+  const show = s.lastShow();
+  assert.equal(show.selectedIndex, 3);
+  assert.deepEqual(show.modifiers, ["Alt"]);
+  s.dispatch({ type: "ack", token: show.token, reply: { ok: true, hasFocus: true, modifiersHeld: true } });
+  s.take();
+  s.dispatch({ type: "flip", windowId: W, tabId: 1, dir: -1 });
+  assert.equal(s.session.index, 2);
+  s.dispatch({ type: "flip", windowId: W, tabId: 1, dir: 1 });
+  s.dispatch({ type: "flip", windowId: W, tabId: 1, dir: 1 });
+  assert.equal(s.session.index, 0); // wraps forward past the end
+  assert.deepEqual(types(s.take()), ["move", "move", "move"]);
+});
+
+test("forward flip without modifiers still shows with Control held", () => {
+  const s = sim([1, 2, 3]);
+  s.flip();
+  assert.equal(s.lastShow().selectedIndex, 1);
+  assert.deepEqual(s.lastShow().modifiers, ["Control"]);
+});
+
+test("fallback mode: backward flip activates the oldest tab first", () => {
+  const s = sim([1, 2, 3, 4], { settings: OFF });
+  s.dispatch({ type: "flip", windowId: W, tabId: 1, dir: -1 });
+  assert.equal(s.active, 4);
+});

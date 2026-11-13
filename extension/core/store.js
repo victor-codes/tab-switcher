@@ -5,13 +5,14 @@
 //
 // State (browser.storage.session, key "state"): { mru, session, icons: { [tabId]: dataUrl } }
 // (Previews are stored beside it under "preview:<tabId>" by core/previews.js.)
-// Settings (browser.storage.local, key "settings"): { overlay, previews, maxItems }
+// Settings (browser.storage.local, key "settings"): { overlay, previews, maxItems, shortcuts }
 
 import { normalize as normalizeMru } from "./mru.js";
+import { DEFAULT_SHORTCUTS, normalizeShortcuts } from "./shortcuts.js";
 
 export const STATE_KEY = "state";
 export const SETTINGS_KEY = "settings";
-export const DEFAULT_SETTINGS = Object.freeze({ overlay: true, previews: true, maxItems: 8 });
+export const DEFAULT_SETTINGS = Object.freeze({ overlay: true, previews: true, maxItems: 8, shortcuts: DEFAULT_SHORTCUTS });
 
 /** A fresh, empty state. */
 export function emptyState() {
@@ -38,6 +39,7 @@ export function normalizeSettings(raw) {
     overlay: typeof s.overlay === "boolean" ? s.overlay : DEFAULT_SETTINGS.overlay,
     previews: typeof s.previews === "boolean" ? s.previews : DEFAULT_SETTINGS.previews,
     maxItems,
+    shortcuts: normalizeShortcuts(s.shortcuts),
   };
 }
 
@@ -66,12 +68,12 @@ export function createStore(area, localArea) {
       }
     },
     async loadSettings() {
-      if (!localArea) return { ...DEFAULT_SETTINGS };
+      if (!localArea) return normalizeSettings(undefined);
       try {
         const got = (await localArea.get(SETTINGS_KEY)) || {};
         return normalizeSettings(got[SETTINGS_KEY]);
       } catch (e) {
-        return { ...DEFAULT_SETTINGS };
+        return normalizeSettings(undefined);
       }
     },
   };

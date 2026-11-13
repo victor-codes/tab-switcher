@@ -11,7 +11,9 @@
 // "pending" = switcher:show sent, ack not processed yet.
 //
 // Events:
-//   { type: "flip", windowId, tabId }            ctx: { now, settings, order }  (tabId = active tab)
+//   { type: "flip", windowId, tabId, dir?, modifiers? }  ctx: { now, settings, order }  (tabId = active tab)
+//        dir: 1 (default) walks to older tabs, -1 walks back; modifiers: keys held while
+//        browsing (default ["Control"]), passed on to switcher:show
 //   { type: "ack", token, reply }                 content-script reply to switcher:show:
 //        { ok: true, hasFocus, modifiersHeld }; hasFocus false -> fallback; hasFocus missing = true
 //   { type: "ackTimeout", token }                 no reply within ACK_TIMEOUT_MS
@@ -24,7 +26,7 @@
 //   { type: "closeAndReturn", windowId, tabId }   ctx: { order }
 //
 // Effects:
-//   { type: "show", tabId, order, selectedIndex, token, ackTimeoutMs }  send switcher:show, then
+//   { type: "show", tabId, order, selectedIndex, modifiers, token, ackTimeoutMs }  send switcher:show, then
 //        feed back "ack" (reply, possibly undefined) or "ackTimeout"  — this is the ack timer
 //   { type: "move", tabId, selectedIndex }
 //   { type: "hide", tabId }
@@ -42,6 +44,16 @@ export const PENDING_STALE_MS = 1000;
 /** Guard against an overlay whose commit never arrives (e.g. modifier keyup not delivered). */
 export const OVERLAY_STALE_MS = 10000;
 export const DEFAULT_MAX_ITEMS = 8;
+export const DEFAULT_MODIFIERS = Object.freeze(["Control"]);
+
+function dirOf(event) {
+  return event && event.dir === -1 ? -1 : 1;
+}
+
+function modifiersOf(event) {
+  const m = event && Array.isArray(event.modifiers) ? event.modifiers.filter((x) => typeof x === "string") : [];
+  return m.length ? m : [...DEFAULT_MODIFIERS];
+}
 
 const STALE_MS = { pending: PENDING_STALE_MS, overlay: OVERLAY_STALE_MS, fallback: FALLBACK_STALE_MS };
 
@@ -99,12 +111,16 @@ function startSession(event, ctx) {
   const known = (Array.isArray(ctx.order) ? ctx.order : []).filter((id) => isId(id) && id !== active);
   const order = [active, ...known].slice(0, maxItems(ctx.settings));
   if (order.length < 2) return { session: null, effects: [] };
+  // Forward starts on the previous tab; backward starts on the oldest one shown.
+  const index = dirOf(event) < 0 ? order.length - 1 : 1;
+  const modifiers = modifiersOf(event);
   const session = {
     id: now,
     windowId: event.windowId,
     originTabId: active,
     order,
-    index: 1,
+    index,
+    modifiers,
     mode: "pending",
     startedAt: now,
     lastFlipAt: now,
@@ -114,7 +130,9 @@ function startSession(event, ctx) {
   if (ctx.settings && ctx.settings.overlay === false) return startFallback(session, now);
   return {
     session,
-    effects: [{ type: "show", tabId: active, order: order.slice(), selectedIndex: 1, token: session.id, ackTimeoutMs: ACK_TIMEOUT_MS }],
+    effects: [
+      { type: "show", tabId: active, order: order.slice(), selectedIndex: index, modifiers, token: session.id, ackTimeoutMs: ACK_TIMEOUT_MS },
+    ],
   };
 }
 
@@ -126,7 +144,9 @@ function flip(session, event, ctx) {
       event.windowId === session.windowId &&
       (session.mode === "overlay" ? event.tabId === session.originTabId : event.tabId === current(session));
     if (sameGesture) {
-      const next = { ...session, index: (session.index + 1) % session.order.length, lastFlipAt: now, seq: session.seq + 1 };
+      const n = session.order.length;
+      const index = (((session.index + dirOf(event)) % n) + n) % n;
+      const next = { ...session, index, lastFlipAt: now, seq: session.seq + 1 };
       if (next.mode === "overlay") {
         return { session: next, effects: [{ type: "move", tabId: next.originTabId, selectedIndex: next.index }] };
       }

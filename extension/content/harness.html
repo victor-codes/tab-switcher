@@ -107,6 +107,11 @@
           log("content -> bg  " + JSON.stringify(msg));
           if (msg.type === "switcher:commit") { if (bg.session) activate(msg.tabId); endSession(); }
           else if (msg.type === "switcher:cancel") { log("BG cancel: stay on " + bg.active); endSession(); }
+          else if (msg.type === "switcher:key") {
+            var variant = document.getElementById("variant") ? document.getElementById("variant").value : "normal";
+            var n = document.getElementById("count") ? +document.getElementById("count").value : 8;
+            setTimeout(function () { flip(variant, n, msg.dir); }, 1);
+          }
           return Promise.resolve();
         },
       },
@@ -129,16 +134,18 @@
     }
 
     // flip command, as the real background does it.
-    function flip(variant, n) {
+    function flip(variant, n, dir) {
+      dir = dir === -1 ? -1 : 1;
       if (bg.session) {
-        bg.session.index = (bg.session.index + 1) % bg.session.items.length;
+        var len = bg.session.items.length;
+        bg.session.index = (((bg.session.index + dir) % len) + len) % len;
         if (bg.session.mode === "overlay") return send({ type: "switcher:move", selectedIndex: bg.session.index });
         activate(bg.session.items[bg.session.index].tabId);
         return Promise.resolve();
       }
       var items = window.harnessData.items(n || 8, variant || "normal");
       if (items.length < 2) log("(real background would no-op with < 2 tabs; showing anyway for layout)");
-      var s = { items: items, index: Math.min(1, items.length - 1), mode: null };
+      var s = { items: items, index: dir < 0 ? items.length - 1 : Math.min(1, items.length - 1), mode: null };
       bg.session = s;
       return send({ type: "switcher:show", items: items, selectedIndex: s.index, modifiers: ["Control"] }).then(function (r) {
         if (!r) { s.mode = "fallback"; log("BG: no reply -> fallback"); activate(items[s.index].tabId); }
@@ -150,8 +157,8 @@
       });
     }
 
-    function key(type, key, ctrl) {
-      var e = new KeyboardEvent(type, { key: key, code: key === "Control" ? "ControlLeft" : key, ctrlKey: ctrl, bubbles: true, cancelable: true });
+    function key(type, key, ctrl, shift) {
+      var e = new KeyboardEvent(type, { key: key, code: key === "Control" ? "ControlLeft" : key, ctrlKey: ctrl, shiftKey: !!shift, bubbles: true, cancelable: true });
       var target = document.activeElement || document.body || document.documentElement;
       target.dispatchEvent(e);
       return e.defaultPrevented;
@@ -165,7 +172,7 @@
       hide: function () { endSession(); return send({ type: "switcher:hide" }); },
       ctrlDown: function () { return key("keydown", "Control", true); },
       ctrlUp: function () { return key("keyup", "Control", false); },
-      key: function (k) { var p = key("keydown", k, true); key("keyup", k, true); return p; },
+      key: function (k, shift) { var p = key("keydown", k, true, shift); key("keyup", k, true, shift); return p; },
       setNoFocus: function (v) { noFocus = !!v; },
       state: function () { return { bg: bg.session && { index: bg.session.index, mode: bg.session.mode }, active: bg.active, content: window.__tabflip && window.__tabflip.state() }; },
       clearLog: function () { logLines.length = 0; log("log cleared"); },

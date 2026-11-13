@@ -2,8 +2,8 @@
 
 A Safari extension for macOS that switches tabs in most-recently-used order.
 
-- **Flip back:** press **⌃Q** (Control-Q) to go to the tab you used before this one. Press it again to come back.
-- **Browse recent tabs:** hold **⌃** and keep tapping **Q**. A switcher on the page walks down your recent tabs; let go of Control to switch, or press Esc to stay put.
+- **Flip back:** press **⌃Tab** (or **⌃Q**) to go to the tab you used before this one. Press it again to come back.
+- **Browse recent tabs:** hold **⌃** and keep tapping **Tab**. A switcher on the page walks down your recent tabs; **⌃⇧Tab** walks back up. Let go of Control to switch, or press Esc to stay put.
 - **Close and return:** **⌃W** closes the current tab and takes you to the tab you used before it, not the one next to it.
 - Recent-tab order is kept per window. The shortcut acts on the window in front.
 
@@ -40,16 +40,23 @@ Once the extension is on you can quit the app. Safari runs the extension by itse
 
 | Shortcut | Action |
 |---|---|
-| ⌃Q | Flip to the previous tab. Hold ⌃ and tap Q again to browse recent tabs. |
+| ⌃Tab | Flip to the previous tab. Hold ⌃ and keep tapping Tab to browse recent tabs. |
+| ⌃⇧Tab | Browse the other way (starts at the oldest tab shown). |
+| ⌃Q | Same as ⌃Tab, and also works from the address bar and the Start Page. |
 | ⌃W | Close the current tab and return to the previous one. |
 
-These are the defaults. Extensions cannot change their own shortcuts in Safari. TabFlip's settings page (Safari Settings › Extensions › TabFlip › Settings) lists the shortcuts Safari currently reports. Control-Tab cannot be used: Safari does not let extensions claim it.
+**⌃Tab and ⌃⇧Tab can be changed** in TabFlip's settings page (Safari Settings › Extensions › TabFlip › Settings › Switch shortcuts): click a shortcut and press the new keys. Each needs Control, Option or Command, and both need to share the modifier you hold while browsing.
+
+How they work: Safari does not let extensions register Control-Tab as a command, and extensions cannot rebind their own commands. So TabFlip catches these shortcuts on the web page itself. They work whenever a page has keyboard focus. In the address bar, on the Start Page, and on pages TabFlip is not allowed on, Safari's own Control-Tab (next tab in the tab bar) applies instead; use ⌃Q there.
+
+⌃Q and ⌃W are Safari commands. The settings page lists them as Safari reports them.
 
 ## Settings
 
 - **Show the switcher on the page** (on by default). When off, each tap switches straight away without drawing anything.
 - **Show page previews** (on by default). When off, TabFlip stops taking previews and deletes the ones it stored.
 - **Tabs shown in the switcher:** 4 to 12 (default 8).
+- **Switch shortcuts:** the next and previous shortcuts (default ⌃Tab and ⌃⇧Tab).
 - **Clear stored previews and history** deletes previews, site icons and recent-tab history.
 
 ## Permissions and why

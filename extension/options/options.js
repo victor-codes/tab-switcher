@@ -1,8 +1,9 @@
 // TabFlip options page. Owner: Agent 3.
 // Reads and writes `settings` in browser.storage.local (schema in
 // plans/00-overview.md), lists the active shortcuts read-only, and asks the
-// background to clear stored data. No network access.
-"use strict";
+// background to clear stored data, and records the switch shortcuts. No network access.
+// Loaded as a module so it shares the shortcut rules with the background.
+import { DEFAULT_SHORTCUTS, normalizeShortcuts, normalizeShortcut, pairProblem, shortcutParts, shortcutSpoken, fromKeyEvent } from "../core/shortcuts.js";
 
 (() => {
   const DEFAULTS = Object.freeze({ overlay: true, previews: true, maxItems: 8 });
@@ -25,6 +26,10 @@
     clearYes: $("clear-yes"),
     clearNo: $("clear-no"),
     clearStatus: $("clear-status"),
+    recNext: $("rec-next"),
+    recPrev: $("rec-prev"),
+    keysReset: $("keys-reset"),
+    keysStatus: $("keys-status"),
   };
 
   // ---------- settings ----------
@@ -63,7 +68,6 @@
     return normalise(got && got.settings);
   }
 
-  let statusTimer = null;
   async function save(patch) {
     try {
       // Read-merge-write so keys written by other code are kept.
@@ -71,9 +75,8 @@
       const current = got && got.settings && typeof got.settings === "object" ? got.settings : {};
       const next = { ...current, ...normalise({ ...current, ...patch }) };
       await api.storage.local.set({ settings: next });
-      setStatus(els.saveStatus, "Saved.", "ok");
-      clearTimeout(statusTimer);
-      statusTimer = setTimeout(() => setStatus(els.saveStatus, "", null), 1500);
+      // Like macOS settings, a change applies silently; only failures are reported.
+      setStatus(els.saveStatus, "", null);
     } catch (err) {
       setStatus(els.saveStatus, "Could not save: " + describe(err), "error");
     }
@@ -94,7 +97,11 @@
   // Reflect changes made elsewhere (another options tab, the background).
   if (api && api.storage && api.storage.onChanged) {
     api.storage.onChanged.addListener((changes, area) => {
-      if (area === "local" && changes.settings) render(normalise(changes.settings.newValue));
+      if (area === "local" && changes.settings) {
+        render(normalise(changes.settings.newValue));
+        keys = normalizeShortcuts(changes.settings.newValue && changes.settings.newValue.shortcuts);
+        if (!recording) renderKeys();
+      }
     });
   }
 
@@ -102,12 +109,12 @@
 
   const KEY_NAMES = {
     MacCtrl: "⌃", Ctrl: "⌃", Control: "⌃", Command: "⌘", Alt: "⌥", Option: "⌥", Shift: "⇧",
-    Space: "Space", Comma: ",", Period: ".", Up: "↑", Down: "↓", Left: "←", Right: "→",
+    Space: "Space", Comma: ",", Period: ".", Up: "↑", Down: "↓", Left: "←", Right: "→", Tab: "⇥",
   };
 
   // "MacCtrl+Q" -> ["⌃", "Q"]. A string without "+" (e.g. Safari already
   // returning "⌃Q") is split into its symbol prefix and the key.
-  function shortcutParts(shortcut) {
+  function commandParts(shortcut) {
     if (shortcut.includes("+")) {
       return shortcut.split("+").filter(Boolean).map((p) => KEY_NAMES[p] || p);
     }
@@ -121,7 +128,9 @@
     return parts;
   }
 
-  const SPOKEN = { "⌃": "Control", "⌘": "Command", "⌥": "Option", "⇧": "Shift" };
+  const SPOKEN = { "⌃": "Control", "⌘": "Command", "⌥": "Option", "⇧": "Shift", "⇥": "Tab" };
+  /** Short row labels; Safari's long command descriptions read as sentences. */
+  const COMMAND_LABELS = { flip: "Previous tab", "close-and-return": "Close tab and go back" };
 
   function renderShortcuts(commands) {
     const list = els.shortcuts;
@@ -130,7 +139,7 @@
     if (shown.length === 0) {
       const li = document.createElement("li");
       li.className = "muted";
-      li.textContent = "Safari did not report any shortcuts for TabFlip.";
+      li.textContent = "Safari didn’t report any shortcuts for TabFlip.";
       list.append(li);
       return;
     }
@@ -139,21 +148,17 @@
       const keys = document.createElement("span");
       keys.className = "keys";
       const desc = document.createElement("span");
-      desc.textContent = cmd.description || cmd.name;
+      desc.className = "label";
+      desc.textContent = COMMAND_LABELS[cmd.name] || cmd.description || cmd.name;
       if (cmd.shortcut) {
-        const parts = shortcutParts(cmd.shortcut);
+        const parts = commandParts(cmd.shortcut);
         keys.setAttribute("aria-label", parts.map((p) => SPOKEN[p] || p).join(" "));
-        for (const p of parts) {
-          const k = document.createElement("kbd");
-          k.textContent = p;
-          k.setAttribute("aria-hidden", "true");
-          keys.append(k);
-        }
+        keys.textContent = parts.join("");
       } else {
-        keys.className = "keys unset";
-        keys.textContent = "Not set";
+        keys.className = "unset";
+        keys.textContent = "None";
       }
-      li.append(keys, desc);
+      li.append(desc, keys);
       list.append(li);
     }
   }
@@ -163,7 +168,9 @@
       if (!api.commands || typeof api.commands.getAll !== "function") {
         throw new Error("commands API unavailable");
       }
-      renderShortcuts(await api.commands.getAll());
+      const commands = await api.commands.getAll();
+      safariKeys = (commands || []).filter((c) => c && c.shortcut).map((c) => commandParts(c.shortcut).join(""));
+      renderShortcuts(commands);
     } catch (err) {
       els.shortcuts.textContent = "";
       const li = document.createElement("li");
@@ -172,6 +179,106 @@
       els.shortcuts.append(li);
     }
   }
+
+  // ---------- switch shortcuts ----------
+
+  let keys = normalizeShortcuts(undefined);
+  /** Shortcuts Safari owns (⌃Q, ⌃W): a page shortcut must not duplicate them. */
+  let safariKeys = [];
+  let recording = null; // "next" | "prev" | null
+
+  function paintKeys(button, s) {
+    button.textContent = shortcutParts(s).join("");
+    button.setAttribute("aria-description", shortcutSpoken(s));
+  }
+
+  function renderKeys() {
+    for (const [which, btn] of [["next", els.recNext], ["prev", els.recPrev]]) {
+      btn.classList.toggle("recording", recording === which);
+      if (recording === which) {
+        btn.textContent = "Type shortcut";
+        btn.removeAttribute("aria-description");
+      } else {
+        paintKeys(btn, keys[which]);
+      }
+    }
+  }
+
+  async function readKeys() {
+    const got = await api.storage.local.get("settings");
+    keys = normalizeShortcuts(got && got.settings && got.settings.shortcuts);
+    renderKeys();
+  }
+
+  async function saveKeys(next) {
+    try {
+      const got = await api.storage.local.get("settings");
+      const current = got && got.settings && typeof got.settings === "object" ? got.settings : {};
+      await api.storage.local.set({ settings: { ...current, shortcuts: next } });
+      keys = next;
+      setStatus(els.keysStatus, "", null);
+    } catch (err) {
+      setStatus(els.keysStatus, "Could not save: " + describe(err), "error");
+    }
+    renderKeys();
+  }
+
+  function startRecording(which) {
+    recording = recording === which ? null : which;
+    setStatus(els.keysStatus, recording ? "Press Esc to keep the current shortcut." : "", null);
+    renderKeys();
+  }
+
+  function stopRecording(message, kind) {
+    recording = null;
+    setStatus(els.keysStatus, message || "", kind || null);
+    renderKeys();
+  }
+
+  els.recNext.addEventListener("click", () => startRecording("next"));
+  els.recPrev.addEventListener("click", () => startRecording("prev"));
+  els.recNext.addEventListener("blur", () => recording === "next" && stopRecording());
+  els.recPrev.addEventListener("blur", () => recording === "prev" && stopRecording());
+  els.keysReset.addEventListener("click", () => {
+    recording = null;
+    saveKeys({ next: { ...DEFAULT_SHORTCUTS.next }, prev: { ...DEFAULT_SHORTCUTS.prev } });
+  });
+
+  // Capture phase on window, so Tab and friends are recorded instead of moving focus.
+  window.addEventListener(
+    "keydown",
+    (e) => {
+      if (!recording) return;
+      if (e.key === "Escape" && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        e.preventDefault();
+        stopRecording();
+        return;
+      }
+      const raw = fromKeyEvent(e);
+      if (!raw) return; // modifiers alone: wait for the key
+      e.preventDefault();
+      e.stopPropagation();
+      const s = normalizeShortcut(raw);
+      if (!s) {
+        setStatus(els.keysStatus, "Use Control, Option or Command with a letter, number, Tab or punctuation key.", "error");
+        return;
+      }
+      const label = shortcutParts(s).join("");
+      if (safariKeys.includes(label)) {
+        setStatus(els.keysStatus, label + " is already a Safari shortcut for TabFlip. Choose another.", "error");
+        return;
+      }
+      const next = { ...keys, [recording]: s };
+      const problem = pairProblem(next.next, next.prev);
+      if (problem) {
+        setStatus(els.keysStatus, problem, "error");
+        return;
+      }
+      recording = null;
+      saveKeys(next);
+    },
+    true
+  );
 
   // ---------- clear data ----------
 
@@ -227,6 +334,12 @@
       setStatus(els.saveStatus, "Could not load settings: " + describe(err), "error");
     }
     loadShortcuts();
+    try {
+      await readKeys();
+    } catch (err) {
+      renderKeys();
+      setStatus(els.keysStatus, "Could not load shortcuts: " + describe(err), "error");
+    }
   }
 
   init();
