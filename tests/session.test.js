@@ -512,3 +512,29 @@ test("release before the ack: no switcher stays open, the selection is used", ()
   assert.deepEqual(noFocus.list(), [2, 1, 3]);
   assert.equal(types(noFocus.take()).includes("startIdleTimer"), false);
 });
+
+test("app-sent flip: the page's missed keydown / missing focus does not end the session", () => {
+  const ctx = { now: 1000, settings: {}, order: [1, 2, 3] };
+  const flipEv = { type: "flip", windowId: 7, tabId: 1, trusted: true };
+  const started = step(null, flipEv, ctx);
+  const show = started.effects.find((e) => e.type === "show");
+  assert.equal(show.assumeHeld, true);
+  // The page never saw Control go down and has no focus, but it drew the switcher.
+  const reply = { ok: true, hasFocus: false, modifiersHeld: false, shown: true };
+  const acked = step(started.session, { type: "ack", token: show.token, reply }, { now: 1010 });
+  assert.equal(acked.session.mode, "overlay");
+  assert.deepEqual(acked.effects, []);
+  // The app reports the release: commit to the selection.
+  const done = step(acked.session, { type: "release" }, { now: 1500 });
+  assert.equal(done.session, null);
+  assert.deepEqual(done.effects.map((e) => e.type), ["hide", "activate", "promote"]);
+  assert.equal(done.effects[1].tabId, 2);
+  // Released before the ack: a quick tap, switch straight away.
+  const early = step(started.session, { type: "release" }, { now: 1005 });
+  const quick = step(early.session, { type: "ack", token: show.token, reply }, { now: 1010 });
+  assert.equal(quick.session, null);
+  assert.equal(quick.effects.find((e) => e.type === "activate").tabId, 2);
+  // A page-sent flip still trusts the page.
+  const page = step(null, { type: "flip", windowId: 7, tabId: 1 }, ctx);
+  assert.equal(page.effects.find((e) => e.type === "show").assumeHeld, false);
+});

@@ -166,7 +166,7 @@ async function perform(state, eff, ctx) {
   switch (eff.type) {
     case "show": {
       const items = await buildItems(state, eff.order, ctx.tabsById, ctx.settings);
-      const msg = { type: "switcher:show", items, selectedIndex: eff.selectedIndex, modifiers: eff.modifiers ?? MODIFIERS };
+      const msg = { type: "switcher:show", items, selectedIndex: eff.selectedIndex, modifiers: eff.modifiers ?? MODIFIERS, assumeHeld: eff.assumeHeld === true };
       const r = await sendWithTimeout(eff.tabId, msg, eff.ackTimeoutMs);
       return r.timedOut ? { type: "ackTimeout", token: eff.token } : { type: "ack", token: eff.token, reply: r.reply };
     }
@@ -244,7 +244,7 @@ function onPageShortcut(senderTab, dir) {
       const order = mru.list(state.mru, t.windowId);
       const { next, prev } = settings.shortcuts;
       const modifiers = holdModifiers(next, prev);
-      await reduce(state, { type: "flip", windowId: t.windowId, tabId: t.id, dir, modifiers }, { settings, order, tabsById });
+      await reduce(state, { type: "flip", windowId: t.windowId, tabId: t.id, dir, modifiers, trusted: !senderTab }, { settings, order, tabsById });
     },
     { settings: true }
   );

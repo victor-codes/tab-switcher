@@ -367,11 +367,17 @@
     }
   }
 
+  /** Forget the session; modifiers we only assumed were held are no longer known to be. */
+  function dropSession() {
+    if (session && session.assumed) for (const m of session.modifiers) held.delete(m);
+    session = null;
+    removeOverlay();
+  }
+
   function finish(kind) {
     if (!session) return;
     const item = session.items[session.index];
-    session = null;
-    removeOverlay();
+    dropSession();
     if (kind === "commit" && item && item.tabId >= 0) send({ type: "switcher:commit", tabId: item.tabId });
     else send({ type: "switcher:cancel" });
   }
@@ -379,13 +385,17 @@
   function onShow(msg) {
     const hasFocus = document.hasFocus();
     const modifiers = normalizeModifiers(msg.modifiers);
+    // The TabFlip app saw the keys go down and reports their release itself. This page
+    // may have missed the keydown (it was in a background tab, or has no focus yet), so
+    // take the app's word and show the switcher regardless.
+    const assumed = msg.assumeHeld === true;
+    if (assumed) for (const m of modifiers) held.add(m);
     const modifiersHeld = allHeld(modifiers);
     // A new show always replaces whatever was there.
-    session = null;
-    removeOverlay();
+    dropSession();
     const items = Array.isArray(msg.items) ? msg.items.map(sanitizeItem) : [];
-    if (hasFocus && modifiersHeld && items.length) {
-      session = { items, index: wrapIndex(msg.selectedIndex, items.length), modifiers };
+    if ((assumed || hasFocus) && modifiersHeld && items.length) {
+      session = { items, index: wrapIndex(msg.selectedIndex, items.length), modifiers, assumed };
       try {
         render(); // same task as the reply: no timers, no animation
       } catch (e) {
@@ -393,7 +403,7 @@
         removeOverlay();
       }
     }
-    return { ok: true, hasFocus, modifiersHeld };
+    return { ok: true, hasFocus, modifiersHeld, shown: !!session };
   }
 
   browser.runtime.onMessage.addListener((msg) => {
@@ -405,8 +415,7 @@
         if (session) select(msg.selectedIndex);
         return Promise.resolve({ ok: true });
       case "switcher:hide":
-        session = null;
-        removeOverlay();
+        dropSession();
         return Promise.resolve({ ok: true });
       default:
         return undefined; // not ours; let other listeners answer

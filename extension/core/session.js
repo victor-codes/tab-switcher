@@ -123,6 +123,10 @@ function startSession(event, ctx) {
     order,
     index,
     modifiers,
+    // From the TabFlip app, which watches the real keyboard state and reports the release:
+    // the page's own idea of which keys are held is then ignored (a tab that was just
+    // switched to has usually not seen the modifier go down, or has no focus yet).
+    trusted: event.trusted === true,
     mode: "pending",
     startedAt: now,
     lastFlipAt: now,
@@ -133,7 +137,7 @@ function startSession(event, ctx) {
   return {
     session,
     effects: [
-      { type: "show", tabId: active, order: order.slice(), selectedIndex: index, modifiers, token: session.id, ackTimeoutMs: ACK_TIMEOUT_MS },
+      { type: "show", tabId: active, order: order.slice(), selectedIndex: index, modifiers, assumeHeld: session.trusted, token: session.id, ackTimeoutMs: ACK_TIMEOUT_MS },
     ],
   };
 }
@@ -189,6 +193,11 @@ function finishFallback(session, now) {
 function ack(session, event, ctx) {
   if (!session || session.mode !== "pending" || event.token !== session.id) return { session, effects: [] };
   const r = event.reply;
+  if (r && r.ok === true && session.trusted && r.shown === true) {
+    // The app said the keys are down and will say when they are let go.
+    if (session.released) return commitTo(session, current(session));
+    return { session: { ...session, mode: "overlay" }, effects: [] };
+  }
   if (r && r.ok === true && typeof r.modifiersHeld === "boolean") {
     if (r.hasFocus === false) {
       if (session.released) {
