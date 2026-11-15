@@ -19,13 +19,13 @@ How to check F6 on any page: open Develop › Web Extension Background Content �
 
 | # | Check | Expected | Result |
 |---|---|---|---|
-| P1 | Open 3 ordinary sites, view each ≥ 1 s, hold ⌃ and tap Q | Overlay cards show a thumbnail of each visited page (top of the page, 16:10) | pass (2026-11-16) |
-| P2 | Background inspector: `Object.keys(await browser.storage.session.get(null))` | `state`, `previewIndex`, one `preview:<id>` per visited tab | pass (2026-11-16) |
-| P3 | Hold ⌃Q on a tab visited < 0.6 s ago or still loading | That card shows the icon/glyph instead of a preview, no error | pass (2026-11-16) |
-| P4 | Browse in overlay, release; wait 2 s; flip again | No thumbnail ever contains the overlay itself | pass (2026-11-16) |
-| P5 | Close a tab with a preview | Its `preview:<id>` key is gone | pass (2026-11-16) |
-| P6 | Options › turn "Show page previews" off | All `preview:*` keys and `previewIndex` gone at once; overlay shows icons/glyphs; no new keys appear while browsing | pass (2026-11-16) |
-| P7 | Turn previews back on, browse | Previews come back after ~0.6 s per tab | pass (2026-11-16) |
+| P1 | Open 3 ordinary sites, view each ≥ 1 s, hold ⌃ and tap Q | Overlay cards show a thumbnail of each visited page (top of the page, 16:10) | not run |
+| P2 | Background inspector: `Object.keys(await browser.storage.session.get(null))` | `state`, `previewIndex`, one `preview:<id>` per visited tab | not run |
+| P3 | Hold ⌃Q on a tab visited < 0.6 s ago or still loading | That card shows the icon/glyph instead of a preview, no error | not run |
+| P4 | Browse in overlay, release; wait 2 s; flip again | No thumbnail ever contains the overlay itself | not run |
+| P5 | Close a tab with a preview | Its `preview:<id>` key is gone | not run |
+| P6 | Options › turn "Show page previews" off | All `preview:*` keys and `previewIndex` gone at once; overlay shows icons/glyphs; no new keys appear while browsing | not run |
+| P7 | Turn previews back on, browse | Previews come back after ~0.6 s per tab | not run |
 | I1 | Overlay on site A listing site B | B's card shows B's icon; Network tab of A shows **no** request to B | not run |
 | I2 | Site whose icon is on another host without CORS (or strict CSP `img-src`) | Letter glyph, no error | not run |
 | I3 | `(await browser.storage.session.get("state")).state.icons` | Only `data:image/png;base64,…` values, each ≤ 8 KB | not run |
