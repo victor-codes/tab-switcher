@@ -39,6 +39,8 @@ struct TabSwitcherSettings: Codable, Equatable {
     var overlay = true
     var previews = true
     var maxItems = 8
+    /// Draw the switcher in a window of this app (above Safari) instead of inside the page.
+    var panel = true
     var shortcuts = ShortcutPair.defaults
 
     static let maxItemsRange = 4...12
@@ -50,6 +52,7 @@ struct TabSwitcherSettings: Codable, Equatable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         overlay = (try? c.decode(Bool.self, forKey: .overlay)) ?? true
         previews = (try? c.decode(Bool.self, forKey: .previews)) ?? true
+        panel = (try? c.decode(Bool.self, forKey: .panel)) ?? true
         let items = (try? c.decode(Int.self, forKey: .maxItems)) ?? 8
         maxItems = Self.maxItemsRange.contains(items) ? items : 8
         var pair = (try? c.decode(ShortcutPair.self, forKey: .shortcuts)) ?? .defaults
@@ -58,6 +61,11 @@ struct TabSwitcherSettings: Codable, Equatable {
         if pair.next == Shortcut(ctrl: true, code: "KeyQ") { pair.next = .defaultNext }
         shortcuts = ShortcutRules.pairProblem(pair.next, pair.prev) == nil ? pair : .defaults
     }
+}
+
+extension Notification.Name {
+    /// The app should forget the tab snapshots it holds ("Clear…", or the panel turned off).
+    static let panelSnapshotsForget = Notification.Name("TabSwitcherPanelSnapshotsForget")
 }
 
 // MARK: - Store
@@ -69,7 +77,14 @@ final class SettingsStore: ObservableObject {
     static let clearTokenKey = "clearToken"
 
     @Published var settings: TabSwitcherSettings {
-        didSet { if settings != oldValue { save() } }
+        didSet {
+            guard settings != oldValue else { return }
+            save()
+            // Turning the panel off forgets what it was going to show.
+            if oldValue.panel && !settings.panel {
+                NotificationCenter.default.post(name: .panelSnapshotsForget, object: nil)
+            }
+        }
     }
 
     private let defaults: UserDefaults?
@@ -99,6 +114,7 @@ final class SettingsStore: ObservableObject {
     /// the next time Safari becomes active (a new token is the request).
     func requestClear() {
         defaults?.set(UUID().uuidString, forKey: Self.clearTokenKey)
+        NotificationCenter.default.post(name: .panelSnapshotsForget, object: nil)
     }
 }
 
