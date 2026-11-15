@@ -102,9 +102,20 @@ do { // shown, click(i): hide, activate item i
     _ = s.apply(.press(1), snapshot: snap(window: 2, items: 4))
     check(s.apply(.click(9), snapshot: nil) == [.hide], "click out of range only hides")
 }
+do { // shown, hover(i): the pointer moves the selection; release then activates it
+    var s = PanelSession()
+    _ = s.apply(.press(1), snapshot: snap(window: 2, items: 4))
+    check(s.apply(.hover(3), snapshot: nil) == [.select(3)], "hover selects the card")
+    check(s.apply(.hover(3), snapshot: nil).isEmpty, "hover on the selected card does nothing")
+    check(s.apply(.hover(9), snapshot: nil).isEmpty, "hover out of range does nothing")
+    check(s.apply(.release, snapshot: nil) == [.hide, .activate(windowId: 2, tabId: 203)], "release activates the hovered card")
+    var f = PanelSession()
+    _ = f.apply(.press(1), snapshot: nil)
+    check(f.apply(.hover(1), snapshot: nil).isEmpty, "hover does nothing when forwarded")
+}
 do { // idle ignores everything but press
     var s = PanelSession()
-    for input in [PanelInput.release, .escape, .click(0), .safariLostFocus, .timeout] {
+    for input in [PanelInput.release, .escape, .click(0), .hover(0), .safariLostFocus, .timeout] {
         check(s.apply(input, snapshot: snap()).isEmpty && s.phase == .idle, "idle ignores \(input)")
     }
 }

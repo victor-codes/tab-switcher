@@ -258,6 +258,32 @@ Expected results per condition. "As normal" = same as the *Normal site* row.
 | F5 | n/a | not run |
 | F6 | n/a | not run |
 
+## Native panel (plan 06, Phase 2)
+
+Build installed 2026-11-15 from `main`. "Panel" = the switcher drawn by the app above
+Safari; "in-page" = the old switcher inside the page. Check the log for each run with
+`/usr/bin/log show --last 5m --info --predicate 'subsystem == "com.example.tabflip"' --style compact`
+(lines `snapshot items=… kept=…` in the app, `snapshot {…}` from the extension).
+
+| # | Check | Expected | Result |
+|---|---|---|---|
+| P1 | Normal page, hold ⌃, tap Tab, release | Panel appears at once centred on the window, previews and titles of the recent tabs; release switches to the selected tab | not run |
+| P2 | Start Page / empty tab | Panel appears (the in-page switcher never could); switching works | not run |
+| P3 | PDF tab | As P2 | not run |
+| P4 | Screen Time limit screen | As P2 | not run |
+| P5 | Full-screen Safari | Panel appears over the full-screen window | not run |
+| P6 | Two windows: switch in one, then the other | Each window's panel shows that window's tabs only | not run |
+| P7 | Private window | Panel shows titles and sites, no previews or icons | not run |
+| P8 | Tab Switcher app not running (Quit Completely) | In-page switcher as before | not run |
+| P9 | "Show the switcher above Safari" off | In-page switcher as before, no panel | not run |
+| P10 | Quick tap ⌃Tab | Switches to the previous tab (the panel may flash: open decision 1) | not run |
+| P11 | Press again right after a switch | Panel shows the new order (the tab you just left first after the current one) | not run |
+| P12 | Switch away from Safari mid-gesture (⌘Tab) | Panel hides, no switch | not run |
+| P13 | Esc while holding ⌃ | Panel hides, no switch | not run |
+| P14 | Click a card | Panel hides, that tab becomes active, Safari stays in front | not run |
+| P15 | A tab that was open before the update | Shows in the panel; switching to it works | not run |
+| P16 | Light and dark appearance | Panel matches the in-page look in both | not run |
+
 ## Failures
 
 | # | Condition / row | Steps | Actual | Severity | Status |

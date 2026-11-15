@@ -20,6 +20,8 @@ enum PanelInput: Equatable {
     case release
     case escape
     case click(Int)
+    /// The pointer moved onto card `index` (it moves the selection, as in the page).
+    case hover(Int)
     case safariLostFocus
     case timeout
 }
@@ -68,7 +70,7 @@ struct PanelSession: Equatable {
                 // Today nothing is sent here: the page ends its own switcher.
                 phase = .idle
                 return []
-            case .escape, .click:
+            case .escape, .click, .hover:
                 return []
             }
 
@@ -84,6 +86,10 @@ struct PanelSession: Equatable {
                 return finish(activating: nil)
             case .click(let index):
                 return finish(activating: items.indices.contains(index) ? index : nil)
+            case .hover(let index):
+                guard items.indices.contains(index), index != selected else { return [] }
+                selected = index
+                return [.select(index)]
             }
         }
     }

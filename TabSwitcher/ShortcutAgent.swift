@@ -36,6 +36,7 @@ private let safariBundleIDs: Set<String> = ["com.apple.Safari", "com.apple.Safar
 final class ShortcutAgent: NSObject {
     private let hotKeys = HotKeys()
     private let snapshots = SnapshotStore()
+    private let snapshotPort = SnapshotPort()
     private var session = PanelSession()
     private lazy var panel = SwitcherPanel()
     private lazy var releaseWatch = ReleaseWatch(
@@ -45,7 +46,14 @@ final class ShortcutAgent: NSObject {
     func start() {
         hotKeys.onPress = { [weak self] dir in self?.pressed(dir) }
         hotKeys.onEscape = { [weak self] in self?.run(.escape) }
+        // Holding the shortcut steps through the cards. Only while the panel is up: the
+        // in-page path (and the setting off) keeps sending exactly one flip per press.
+        hotKeys.onRepeat = { [weak self] dir in
+            guard let self else { return }
+            if self.session.phase == .shown { self.run(.press(dir)) } else { self.hotKeys.stopRepeat() }
+        }
         panel.onClick = { [weak self] index in self?.run(.click(index)) }
+        panel.onHover = { [weak self] index in self?.run(.hover(index)) }
         let center = NSWorkspace.shared.notificationCenter
         center.addObserver(self, selector: #selector(appActivated(_:)),
                            name: NSWorkspace.didActivateApplicationNotification, object: nil)
@@ -54,6 +62,10 @@ final class ShortcutAgent: NSObject {
         NotificationCenter.default.addObserver(self, selector: #selector(forgetSnapshots),
                                                name: .panelSnapshotsForget, object: nil)
         update(frontmost: NSWorkspace.shared.frontmostApplication)
+        snapshotPort.onSnapshot = { [weak self] snapshot in self?.receive(snapshot) }
+        snapshotPort.listen()
+        // Anything the extension pushed before the port was listening was lost: ask again.
+        requestSnapshots()
         #if DEBUG
         loadFixture()
         #endif
@@ -62,9 +74,13 @@ final class ShortcutAgent: NSObject {
     }
 
     /// Hand the app a snapshot of one Safari window's tabs (rules 3–5 decide what is kept).
-    /// Phase 2 calls this for each snapshot that arrives from the extension.
+    /// Called for each snapshot the extension pushes (SnapshotPort) and for the debug fixture.
     func receive(_ snapshot: PanelSnapshot) {
-        guard snapshots.receive(snapshot) else { return }
+        // With the panel off nothing is kept (rule 6); the extension stops pushing soon after.
+        guard loadSettings().panel else { return }
+        let kept = snapshots.receive(snapshot)
+        log.info("snapshot items=\(snapshot.items.count, privacy: .public) seq=\(snapshot.seq, privacy: .public) focused=\(snapshot.focused, privacy: .public) kept=\(kept, privacy: .public)")
+        guard kept else { return }
         panel.prime(snapshot.items)
     }
 
@@ -87,7 +103,9 @@ final class ShortcutAgent: NSObject {
     private func update(frontmost: NSRunningApplication?) {
         log.info("frontmost: \(frontmost?.bundleIdentifier ?? "none", privacy: .public)")
         if let id = frontmost?.bundleIdentifier, safariBundleIDs.contains(id) {
-            hotKeys.register(loadSettings().shortcuts)
+            let settings = loadSettings()
+            hotKeys.register(settings.shortcuts)
+            if settings.panel, snapshots.current == nil { requestSnapshots() }
         } else {
             hotKeys.unregister()
             releaseWatch.stop()
@@ -109,7 +127,10 @@ final class ShortcutAgent: NSObject {
         // The path is decided at the first press; only then is the setting and the store read.
         var usable: PanelSnapshot?
         if session.phase == .idle, loadSettings().panel { usable = snapshots.current }
+        let first = session.phase == .idle
         perform(session.apply(.press(dir), snapshot: usable))
+        // Forwarded for lack of a snapshot: ask for one so the next gesture can use the panel.
+        if first, usable == nil, loadSettings().panel { requestSnapshots() }
         releaseWatch.start(holding: hotKeys.holdFlags)
     }
 
@@ -129,6 +150,7 @@ final class ShortcutAgent: NSObject {
                 panel.select(index)
             case .hide:
                 panel.hide()
+                hotKeys.stopRepeat()
                 hotKeys.unregisterEscape()
             case .activate(let windowId, let tabId):
                 send("activate", ["windowId": windowId, "tabId": tabId])
@@ -138,6 +160,11 @@ final class ShortcutAgent: NSObject {
                 send("release", [:])
             }
         }
+    }
+
+    /// Ask the extension to push every window's snapshot again (it does so even if unchanged).
+    private func requestSnapshots() {
+        send("snapshot:request", [:])
     }
 
     private func send(_ name: String, _ info: [String: Any]) {
@@ -162,12 +189,65 @@ final class ShortcutAgent: NSObject {
     #endif
 }
 
+// MARK: - Snapshots from the extension
+
+/// Receives the snapshots the extension's native handler forwards (TabSwitcher Extension/
+/// SafariWebExtensionHandler.swift) over a CFMessagePort named "<App Group>.panel". Messages
+/// are `{ type: "snapshot:push", snapshot }` as JSON, message id 1. In memory only.
+/// The App Sandbox allows a port named under the App Group (plans/SPIKE-PANEL.md).
+final class SnapshotPort {
+    var onSnapshot: ((PanelSnapshot) -> Void)?
+    private var port: CFMessagePort?
+    static let snapshotMessageID: Int32 = 1
+
+    private struct Message: Decodable {
+        var type: String
+        var snapshot: PanelSnapshot
+    }
+
+    func listen() {
+        guard port == nil,
+              let group = Bundle.main.object(forInfoDictionaryKey: "TabSwitcherAppGroup") as? String
+        else { return }
+        let name = group + ".panel"
+        var context = CFMessagePortContext(version: 0, info: Unmanaged.passUnretained(self).toOpaque(),
+                                           retain: nil, release: nil, copyDescription: nil)
+        var shouldFree: DarwinBoolean = false
+        let callback: CFMessagePortCallBack = { _, msgid, data, info in
+            guard msgid == SnapshotPort.snapshotMessageID, let data, let info else { return nil }
+            let me = Unmanaged<SnapshotPort>.fromOpaque(info).takeUnretainedValue()
+            let bytes = data as Data
+            MainActor.assumeIsolated { me.handle(bytes) }
+            return nil
+        }
+        guard let port = CFMessagePortCreateLocal(nil, name as CFString, callback, &context, &shouldFree) else {
+            log.error("snapshot port: could not listen on \(name, privacy: .public)")
+            return
+        }
+        CFRunLoopAddSource(CFRunLoopGetMain(), CFMessagePortCreateRunLoopSource(nil, port, 0), .commonModes)
+        self.port = port
+        log.notice("snapshot port: listening")
+    }
+
+    private func handle(_ data: Data) {
+        guard let message = try? JSONDecoder().decode(Message.self, from: data), message.type == "snapshot:push" else {
+            log.error("snapshot port: unreadable message (\(data.count, privacy: .public) bytes)")
+            return
+        }
+        onSnapshot?(message.snapshot)
+    }
+}
+
 // MARK: - Hot keys
 
 /// The two system-wide shortcuts, through the Carbon hot key API.
 final class HotKeys {
     var onPress: ((Int) -> Void)?
+    /// While a shortcut's key stays down, called at the keyboard's repeat rate (the hot key
+    /// API itself sends one press and no repeats).
+    var onRepeat: ((Int) -> Void)?
     var onEscape: (() -> Void)?
+    private var repeatTimer: Timer?
     private var escapeRefs: [EventHotKeyRef] = []
     /// The modifiers both shortcuts share (Shift excepted): the ones held while browsing.
     private(set) var holdFlags: CGEventFlags = .maskControl
@@ -178,7 +258,8 @@ final class HotKeys {
     private static let signature: OSType = 0x5446_6C70 // "TFlp"
 
     init() {
-        var spec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
+        var specs = [EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed)),
+                     EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyReleased))]
         let me = Unmanaged.passUnretained(self).toOpaque()
         InstallEventHandler(GetApplicationEventTarget(), { _, event, context in
             guard let event, let context else { return OSStatus(eventNotHandledErr) }
@@ -187,11 +268,44 @@ final class HotKeys {
                                            nil, MemoryLayout<EventHotKeyID>.size, nil, &id)
             guard status == noErr, id.signature == HotKeys.signature else { return OSStatus(eventNotHandledErr) }
             let keys = Unmanaged<HotKeys>.fromOpaque(context).takeUnretainedValue()
+            let released = GetEventKind(event) == UInt32(kEventHotKeyReleased)
             MainActor.assumeIsolated {
-                if id.id >= 3 { keys.onEscape?() } else { keys.onPress?(id.id == 2 ? -1 : 1) }
+                if id.id >= 3 {
+                    if !released { keys.onEscape?() }
+                } else if released {
+                    keys.stopRepeat()
+                } else {
+                    let dir = id.id == 2 ? -1 : 1
+                    keys.onPress?(dir)
+                    keys.startRepeat(dir)
+                }
             }
             return noErr
-        }, 1, &spec, me, &handler)
+        }, 2, &specs, me, &handler)
+    }
+
+    /// Key repeat for a held shortcut: the system's delay, then its interval, until the
+    /// key's release arrives (or the shortcuts are given up).
+    private func startRepeat(_ dir: Int) {
+        stopRepeat()
+        let delay = Timer(timeInterval: NSEvent.keyRepeatDelay, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                let tick = Timer(timeInterval: NSEvent.keyRepeatInterval, repeats: true) { [weak self] _ in
+                    MainActor.assumeIsolated { self?.onRepeat?(dir) }
+                }
+                RunLoop.main.add(tick, forMode: .common)
+                self.repeatTimer = tick
+                self.onRepeat?(dir)
+            }
+        }
+        RunLoop.main.add(delay, forMode: .common)
+        repeatTimer = delay
+    }
+
+    func stopRepeat() {
+        repeatTimer?.invalidate()
+        repeatTimer = nil
     }
 
     func register(_ pair: ShortcutPair) {
@@ -237,6 +351,7 @@ final class HotKeys {
     }
 
     func unregister() {
+        stopRepeat()
         unregisterEscape()
         for ref in refs { UnregisterEventHotKey(ref) }
         refs = []

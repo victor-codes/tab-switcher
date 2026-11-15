@@ -69,7 +69,7 @@ function fakeBrowser({ tabs, content = {}, sessionData = {}, localData = {}, app
       onStartup: event(),
       onInstalled: event(),
       onMessage: event(),
-      ...(app ? { sendNativeMessage: async (_id, msg) => (msg?.type === "log" ? ((app.logs ??= []).push(msg), { ok: true }) : msg?.type === "snapshot:push" ? ((app.pushes ??= []).push(msg.snapshot), { delivered: true }) : (app.calls.push(msg), app.reply())) } : {}),
+      ...(app ? { sendNativeMessage: async (_id, msg) => (msg?.type === "log" ? ((app.logs ??= []).push(msg), { ok: true }) : msg?.type === "snapshot:push" ? ((app.pushes ??= []).push(msg.snapshot), { delivered: app.deliver !== false }) : (app.calls.push(msg), app.reply())) } : {}),
       connectNative(id) {
         b._ports.push(id);
         return b._helper;
@@ -721,6 +721,37 @@ test("snapshot: one push per tab switch, with the new order; an identical state 
   b.tabs.onActivated.fire({ tabId: 2, windowId: 1 });
   await settle();
   assert.equal(app.pushes.length, before + 1, "same content: nothing pushed");
+});
+
+test("snapshot: an undelivered push is sent again on the next change, even if unchanged", async () => {
+  const app = panelApp();
+  app.deliver = false; // the app is not listening yet
+  const b = fakeBrowser({ tabs: threeTabs(), app });
+  const { settle } = await boot(b);
+  await settle();
+  assert.equal(app.pushes.length, 1);
+  app.deliver = true;
+  await sleep(260);
+  b.tabs.onActivated.fire({ tabId: 1, windowId: 1 }); // same state as the first push
+  await settle();
+  await sleep(10);
+  await settle();
+  assert.equal(app.pushes.length, 2, "pushed again although the content is the same");
+});
+
+test("snapshot: the app's snapshot:request pushes every window again", async () => {
+  const app = panelApp();
+  const b = fakeBrowser({ tabs: threeTabs(), app });
+  const { settle } = await boot(b);
+  await settle();
+  assert.equal(app.pushes.length, 1);
+  await sleep(260);
+  b._helper.onMessage.fire({ name: "snapshot:request" });
+  await settle();
+  await sleep(10);
+  await settle();
+  assert.equal(app.pushes.length, 2);
+  assert.deepEqual(app.pushes.at(-1).items.map((i) => i.tabId), app.pushes[0].items.map((i) => i.tabId));
 });
 
 test("snapshot: a second change inside 250 ms is held and goes out at the end of the window", async () => {

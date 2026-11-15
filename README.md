@@ -86,6 +86,7 @@ If Tab Switcher isn't running, the content script still catches the shortcuts wh
 All settings are in the Tab Switcher app; the extension has no settings page of its own. The app saves each change at once to a shared App Group. The extension's native handler (`TabSwitcher Extension/SafariWebExtensionHandler.swift`) returns them to the extension (`extension/core/appsync.js`), which applies them whenever its background starts or a Safari window becomes active, so a change shows up as soon as you switch back to Safari.
 
 - **Show the switcher** (on by default). When off, each tap switches straight away without drawing anything.
+- **Show the switcher above Safari** (on by default). The Tab Switcher app draws the switcher in its own floating panel over Safari, so it also appears on the Start Page, error pages, PDFs, the Screen Time limit screen and sites Tab Switcher may not access. When off, or when the app is not running, the switcher is drawn inside the page as before.
 - **Show page previews** (on by default). When off, Tab Switcher stops taking previews and deletes the ones it stored.
 - **Tabs shown in the switcher:** 4 to 12 (default 8).
 - **Keyboard shortcuts:** the next and previous shortcuts (default ⌃Tab and ⌃⇧Tab).
@@ -99,16 +100,16 @@ All settings are in the Tab Switcher app; the extension has no settings page of 
 | `storage` | Keep the recent-tab order, previews and your settings in Safari's extension storage on this Mac. |
 | `activeTab` | Take a small preview of the tab you are looking at. |
 | `alarms` | Wake the extension every 30 seconds so a shortcut press is never lost. Safari unloads an idle extension, and the app's key presses cannot wake it. |
-| `nativeMessaging` | Read the settings you chose in the Tab Switcher app, and receive shortcut presses from the app (both on this Mac). |
+| `nativeMessaging` | Read the settings you chose in the Tab Switcher app, receive shortcut presses from the app, and pass the recent-tab list to the app so it can draw the switcher above Safari (all on this Mac). |
 | Access to all websites | Draw the switcher on the page and notice when you release Control. Without it, Tab Switcher falls back to quick-flip mode (below). |
 
 ## Privacy
 
-Nothing leaves your Mac. Tab Switcher makes no network requests and has no analytics; the container app cannot make network connections at all. Recent-tab order, site icons and previews live only in Safari's extension storage on this Mac, and nothing is captured or stored for private windows.
+Nothing leaves your Mac. Tab Switcher makes no network requests and has no analytics; the container app cannot make network connections at all. Recent-tab order, site icons and previews live only in Safari's extension storage on this Mac, and nothing is captured or stored for private windows. To draw the switcher above Safari, the extension passes the recent-tab list (titles, sites, icons and previews; for private windows only titles and sites) to the Tab Switcher app on this Mac, which keeps it in memory only and forgets it when Safari quits.
 
 ## Known limits
 
-- **Quick-flip mode.** Where the switcher cannot appear, each tap switches straight away, and letting go of Control ends the sequence. This happens on the Start Page, Safari's own pages, PDFs, sites Tab Switcher has not been allowed on, and whenever the page itself does not have keyboard focus (for example while you are typing in the address bar).
+- **Quick-flip mode** (only when "Show the switcher above Safari" is off or the app is not running). Where the in-page switcher cannot appear, each tap switches straight away, and letting go of Control ends the sequence. This happens on the Start Page, Safari's own pages, PDFs, sites Tab Switcher has not been allowed on, and whenever the page itself does not have keyboard focus (for example while you are typing in the address bar).
 - Tabs are switched only within the front window.
 - macOS only; no iPhone or iPad version.
 

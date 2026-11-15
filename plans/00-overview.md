@@ -27,6 +27,19 @@ Safari Web Extension (Manifest V3) inside a minimal macOS container app. Three r
 
 Why a content script is required: the `commands` API only reports key *presses*. Detecting the modifier *release* (F2) is only possible from inside the page. Pages where content scripts cannot run (Start Page, Safari internal pages, sites without granted access, PDFs) use the **fallback mode** below.
 
+### Native switcher panel (added 2026-11-15, `06-native-panel.md`)
+
+The container app is now also a runtime: it runs in the background, claims the shortcuts
+while Safari is in front (`TabSwitcher/ShortcutAgent.swift`) and, with "Show the switcher
+above Safari" on, draws the switcher itself in a non-activating `NSPanel`
+(`SwitcherPanel.swift`, `SwitcherView.swift`). The background pushes a snapshot of each
+window's recent tabs (`extension/core/snapshot.js`) through the native handler to the app
+over a `CFMessagePort` named `<App Group>.panel`; the app keeps them in memory
+(`SnapshotStore.swift`) and decides each gesture in `PanelSession.swift`. On release it sends
+`activate { windowId, tabId }` back through `dispatchMessage`. Without a usable snapshot, or
+with the setting off, the app forwards `flip` / `release` and the in-page switcher works as
+described here. Spike results: `SPIKE-PANEL.md`. QA: "Native panel" in `QA-RESULTS.md`.
+
 ### Repository layout and file ownership
 
 ```

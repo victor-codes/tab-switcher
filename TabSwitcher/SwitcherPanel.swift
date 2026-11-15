@@ -17,8 +17,28 @@ import SwiftUI
 private let log = Logger(subsystem: "com.example.tabflip", category: "panel")
 
 /// Clicks reach a window that is not key only if the view accepts the first mouse.
+/// The panel is never key and Safari stays the active app, so pointer moves come from a
+/// tracking area that is active always (SwiftUI's own hover tracking needs an active window).
 private final class PanelHostingView<Content: View>: NSHostingView<Content> {
+    /// The pointer's position, top-left origin, in this view.
+    var onMouseMoved: ((CGPoint) -> Void)?
+    private var area: NSTrackingArea?
+
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let area { removeTrackingArea(area) }
+        let next = NSTrackingArea(rect: .zero, options: [.mouseMoved, .activeAlways, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(next)
+        area = next
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        let p = convert(event.locationInWindow, from: nil)
+        onMouseMoved?(CGPoint(x: p.x, y: isFlipped ? p.y : bounds.height - p.y))
+    }
 }
 
 private final class NonActivatingPanel: NSPanel {
@@ -33,7 +53,15 @@ final class SwitcherPanel {
         set { model.onClick = newValue }
     }
 
+    /// Called with the index of the card the pointer moved onto.
+    var onHover: ((Int) -> Void)?
+
     private let model = SwitcherModel()
+    /// Where the pointer was first seen after the panel appeared; it must travel a few px
+    /// before it moves the selection (a pointer resting where the panel opens does nothing),
+    /// as in the page (extension/content/switcher.js, onPanelPointerMove).
+    private var pointerOrigin: CGPoint?
+    private var pointerLive = false
     private let panel: NSPanel
     private let host: PanelHostingView<SwitcherView>
     private(set) var isShown = false
@@ -54,6 +82,18 @@ final class SwitcherPanel {
         host = PanelHostingView(rootView: SwitcherView(model: model))
         host.sizingOptions = []
         panel.contentView = host
+        panel.acceptsMouseMovedEvents = true
+        host.onMouseMoved = { [weak self] point in self?.pointerMoved(to: point) }
+    }
+
+    private func pointerMoved(to point: CGPoint) {
+        guard isShown else { return }
+        guard let origin = pointerOrigin else { pointerOrigin = point; return }
+        if !pointerLive {
+            if hypot(point.x - origin.x, point.y - origin.y) < 4 { return }
+            pointerLive = true
+        }
+        if let index = model.card(at: point) { onHover?(index) }
     }
 
     /// Decode images ahead of a press (call when a snapshot arrives).
@@ -98,6 +138,8 @@ final class SwitcherPanel {
         panel.setContentSize(size)
         panel.setFrameOrigin(NSPoint(x: region.midX - size.width / 2, y: region.midY - size.height / 2))
         host.layoutSubtreeIfNeeded()
+        pointerOrigin = nil
+        pointerLive = false
         panel.orderFrontRegardless()
         isShown = true
     }

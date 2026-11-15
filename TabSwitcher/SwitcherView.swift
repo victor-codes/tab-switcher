@@ -108,6 +108,13 @@ final class SwitcherModel: ObservableObject {
     @Published var selected = 0
     @Published var viewport = CGSize(width: 1000, height: 700)
     var onClick: ((Int) -> Void)?
+    /// Each card's frame in the panel (top-left origin), for pointer hit testing.
+    var cardFrames: [Int: CGRect] = [:]
+
+    /// The card under `point` (panel coordinates, top-left origin), if any.
+    func card(at point: CGPoint) -> Int? {
+        cardFrames.first { items.indices.contains($0.key) && $0.value.contains(point) }?.key
+    }
 
     /// Decoded images by tab id; an entry is reused while its source string is unchanged.
     private var images: [Int: (source: String, image: NSImage)] = [:]
@@ -162,7 +169,8 @@ struct SwitcherView: View {
             Array($0..<min($0 + m.cols, model.items.count))
         }
         ScrollViewReader { proxy in
-            ScrollView(.vertical, showsIndicators: m.contentHeight > m.listHeight) {
+            let scrolls = m.contentHeight > m.listHeight + 0.5
+            ScrollView(.vertical, showsIndicators: scrolls) {
                 VStack(spacing: SwitcherLayout.gap) {
                     ForEach(rows.indices, id: \.self) { r in
                         HStack(spacing: SwitcherLayout.gap) {
@@ -172,6 +180,9 @@ struct SwitcherView: View {
                                              preview: model.preview(of: model.items[i]),
                                              icon: model.icon(of: model.items[i]))
                                     .id(i)
+                                    .background(GeometryReader { g in
+                                        Color.clear.preference(key: CardFrames.self, value: [i: g.frame(in: .named(Self.space))])
+                                    })
                                     .contentShape(Rectangle())
                                     .onTapGesture { model.onClick?(i) }
                             }
@@ -181,7 +192,10 @@ struct SwitcherView: View {
                 .frame(width: m.listWidth)
             }
             .frame(width: m.listWidth, height: m.listHeight)
-            .onChange(of: model.selected) { _, new in proxy.scrollTo(new) }
+            // Only a list taller than the panel moves; otherwise a selection change must not
+            // scroll it at all (that showed as a small shift on every press).
+            .scrollDisabled(!scrolls)
+            .onChange(of: model.selected) { _, new in if scrolls { proxy.scrollTo(new) } }
         }
         .padding(SwitcherLayout.panelPadding)
         .background(Background(solid: solid, palette: palette))
@@ -192,7 +206,11 @@ struct SwitcherView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: SwitcherLayout.panelRadius))
         .frame(width: m.panelSize.width, height: m.panelSize.height)
+        .coordinateSpace(name: Self.space)
+        .onPreferenceChange(CardFrames.self) { frames in model.cardFrames = frames }
     }
+
+    private static let space = "switcherPanel"
 
     /// The panel material: a blur (40 px, saturate 180%) under the translucent panel colour,
     /// with a 0.5 px highlight along the top edge.
@@ -216,9 +234,36 @@ struct SwitcherView: View {
     }
 }
 
+/// A blur of what is behind the window, without the material's own colour. The system
+/// material draws a grey "fill" and a "tone" layer (and a desktop tint) over its blur;
+/// hidden here, so the panel colour sits on the plain blur, as `backdrop-filter` does in
+/// the page. Layer names are not API: if they change, nothing is hidden and the panel
+/// just looks a little more opaque.
+private final class PlainBlurView: NSVisualEffectView {
+    private static let tintLayers: Set<String> = ["fill", "tone", "desktop tint"]
+
+    override func layout() {
+        super.layout()
+        hideTint()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsLayout = true
+    }
+
+    private func hideTint() {
+        func walk(_ l: CALayer) {
+            if let name = l.name, Self.tintLayers.contains(name) { l.isHidden = true }
+            l.sublayers?.forEach(walk)
+        }
+        if let layer { walk(layer) }
+    }
+}
+
 private struct BlurMaterial: NSViewRepresentable {
     func makeNSView(context: Context) -> NSVisualEffectView {
-        let v = NSVisualEffectView()
+        let v = PlainBlurView()
         v.material = .popover
         v.blendingMode = .behindWindow
         v.state = .active
@@ -267,7 +312,9 @@ struct SwitcherCard: View {
             .padding(.bottom, 2)
         }
         .padding(EdgeInsets(top: 8, leading: 8, bottom: 7, trailing: 8))
-        .frame(width: width, alignment: .leading)
+        // Exactly the height the panel was sized for (SwitcherLayout.cardHeight), whatever
+        // the text measures, so the list never ends up a few px taller than its frame.
+        .frame(width: width, height: SwitcherLayout.cardHeight(cardWidth: width), alignment: .topLeading)
         .background(RoundedRectangle(cornerRadius: SwitcherLayout.cardRadius).fill(selected ? palette.plate : .clear))
         .overlay {
             if selected && moreContrast {
@@ -310,8 +357,10 @@ struct SwitcherCard: View {
             .foregroundStyle(palette.fg)
             .lineLimit(1)
             .fixedSize(horizontal: true, vertical: false)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: SwitcherLayout.lineHeight)
+            // An exact box (card minus its 8 px padding each side, the 16 px icon and the 6 px
+            // gap): the text keeps its natural width inside it and is cut at the edge, so a long
+            // title can never widen the row past the card.
+            .frame(width: max(0, width - 16 - 16 - 6), height: SwitcherLayout.lineHeight, alignment: .leading)
             .clipped()
             .mask {
                 HStack(spacing: 0) {
@@ -329,5 +378,13 @@ struct SwitcherCard: View {
             .foregroundStyle(palette.fg)
             .frame(width: size, height: size)
             .background(Circle().fill(palette.glyphBackground))
+    }
+}
+
+/// Card frames in the panel, by item index (SwitcherModel.card(at:)).
+private struct CardFrames: PreferenceKey {
+    static let defaultValue: [Int: CGRect] = [:]
+    static func reduce(value: inout [Int: CGRect], nextValue: () -> [Int: CGRect]) {
+        value.merge(nextValue()) { $1 }
     }
 }

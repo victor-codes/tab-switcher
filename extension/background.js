@@ -441,6 +441,12 @@ function onAppMessage(msg) {
   if (name === "flip") onPageShortcut(null, Number(info.dir) === -1 ? -1 : 1);
   else if (name === "release") job((state) => reduce(state, { type: "release" }));
   else if (name === "activate") onActivate(info.windowId, info.tabId);
+  else if (name === "snapshot:request") {
+    // The app has no snapshot (it just started, or Safari came back without one): push
+    // every window again, even if unchanged since the last push.
+    lastPushed.clear();
+    queuePushAll();
+  }
 }
 
 /**
@@ -553,6 +559,9 @@ async function pushWindow(state, windowId, settings, onlyTabId) {
     } catch {
       delivered = false;
     }
+    // Not delivered (the app is not running yet, or is starting): forget it, so the next
+    // change pushes again instead of being dropped as "unchanged".
+    if (!delivered && lastPushed.get(windowId)?.snap === snap) lastPushed.delete(windowId);
     diag("snapshot", { w: windowId, seq: snap.seq, items: snap.items.length, previews: snap.items.filter((i) => i.preview).length, focused: snap.focused, delivered, ms: Date.now() - t0 });
   });
 }
