@@ -5,14 +5,14 @@
 //
 // State (browser.storage.session, key "state"): { mru, session, icons: { [tabId]: dataUrl } }
 // (Previews are stored beside it under "preview:<tabId>" by core/previews.js.)
-// Settings (browser.storage.local, key "settings"): { overlay, previews, maxItems, shortcuts }
+// Settings (browser.storage.local, key "settings"): { overlay, previews, panel, maxItems, shortcuts }
 
 import { normalize as normalizeMru } from "./mru.js";
 import { DEFAULT_SHORTCUTS, normalizeShortcuts } from "./shortcuts.js";
 
 export const STATE_KEY = "state";
 export const SETTINGS_KEY = "settings";
-export const DEFAULT_SETTINGS = Object.freeze({ overlay: true, previews: true, maxItems: 8, shortcuts: DEFAULT_SHORTCUTS });
+export const DEFAULT_SETTINGS = Object.freeze({ overlay: true, previews: true, panel: true, maxItems: 8, shortcuts: DEFAULT_SHORTCUTS });
 
 /** A fresh, empty state. */
 export function emptyState() {
@@ -38,6 +38,7 @@ export function normalizeSettings(raw) {
   return {
     overlay: typeof s.overlay === "boolean" ? s.overlay : DEFAULT_SETTINGS.overlay,
     previews: typeof s.previews === "boolean" ? s.previews : DEFAULT_SETTINGS.previews,
+    panel: typeof s.panel === "boolean" ? s.panel : DEFAULT_SETTINGS.panel,
     maxItems,
     shortcuts: normalizeShortcuts(s.shortcuts),
   };

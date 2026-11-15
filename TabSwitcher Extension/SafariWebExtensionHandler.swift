@@ -5,7 +5,9 @@
 //  Answers the extension's `browser.runtime.sendNativeMessage` calls. The only request is
 //  { type: "settings:get" }: it replies with what the Tab Switcher app saved in the shared App
 //  Group, as { settings: {...} | null, clearToken: String | null }. Read-only: the app is
-//  the only writer.
+//  the only writer. `{ type: "snapshot:push", snapshot }` is forwarded to the running app
+//  over a CFMessagePort named "<App Group>.panel" (in memory only); the reply is
+//  { delivered: Bool }, false when the app is not running. `log` writes to the system log.
 //
 
 import SafariServices
@@ -29,6 +31,8 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                 reply["settings"] = NSNull()
             }
             reply["clearToken"] = shared?.string(forKey: SharedSettings.clearTokenKey) ?? NSNull()
+        } else if message?["type"] as? String == "snapshot:push" {
+            reply["delivered"] = PanelPort.send(message ?? [:])
         } else if message?["type"] as? String == "log" {
             // Diagnostics from the background (event names, counts, timings; nothing from a page).
             let what = message?["what"] as? String ?? "?"
@@ -53,5 +57,24 @@ enum SharedSettings {
     static var defaults: UserDefaults? {
         guard let group = Bundle.main.object(forInfoDictionaryKey: "TabSwitcherAppGroup") as? String else { return nil }
         return UserDefaults(suiteName: group)
+    }
+}
+
+/// The way to the running app: a CFMessagePort named after the App Group (spike: allowed in the
+/// sandbox for both targets, 8 MB delivered). Nothing is written to disk.
+enum PanelPort {
+    /// Message id the app's port callback expects for a snapshot.
+    static let snapshotMessageID: Int32 = 1
+
+    /// Sends `message` (the `{ type, snapshot }` object) as JSON. False when the app is not
+    /// running (no port) or does not answer within a second.
+    static func send(_ message: [String: Any]) -> Bool {
+        guard let group = Bundle.main.object(forInfoDictionaryKey: "TabSwitcherAppGroup") as? String,
+              JSONSerialization.isValidJSONObject(message),
+              let data = try? JSONSerialization.data(withJSONObject: message),
+              let remote = CFMessagePortCreateRemote(nil, (group + ".panel") as CFString) else { return false }
+        defer { CFMessagePortInvalidate(remote) }
+        let status = CFMessagePortSendRequest(remote, snapshotMessageID, data as CFData, 1.0, 0, nil, nil)
+        return status == kCFMessagePortSuccess
     }
 }
