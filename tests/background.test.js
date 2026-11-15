@@ -50,11 +50,15 @@ const ICON_A = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFc
  * `content`: { [tabId]: (msg) => reply | "reject" | "hang" } — tabs without an entry have
  * no content script and answer sendMessage with undefined, as measured.
  */
-function fakeBrowser({ tabs, content = {}, sessionData = {}, localData = {}, app }) {
+function fakeBrowser({ tabs, content = {}, sessionData = {}, localData = {}, app, inject, deadMessaging = false }) {
   const b = {
     _tabs: tabs.map((t) => ({ ...t })),
     _focused: tabs[0]?.windowId ?? 1,
     _sent: [],
+    _pings: [],
+    _injected: [],
+    _direct: {}, // tabId -> the loaded switcher's direct entry (__tabflipDeliver)
+    _directSent: [],
     _ports: [],
     _helper: { onMessage: event(), onDisconnect: event() },
     _content: content,
@@ -65,13 +69,36 @@ function fakeBrowser({ tabs, content = {}, sessionData = {}, localData = {}, app
       onStartup: event(),
       onInstalled: event(),
       onMessage: event(),
-      ...(app ? { sendNativeMessage: async (_id, msg) => (app.calls.push(msg), app.reply()) } : {}),
+      ...(app ? { sendNativeMessage: async (_id, msg) => (msg?.type === "log" ? { ok: true } : (app.calls.push(msg), app.reply())) } : {}),
       connectNative(id) {
         b._ports.push(id);
         return b._helper;
       },
     },
     windows: { onRemoved: event(), onFocusChanged: event() },
+    // `inject`: (tabId) => content handler for the freshly loaded script, or throws where
+    // Safari allows no script. Without it there is no scripting API (as before).
+    ...(inject
+      ? {
+          scripting: {
+            // With `files`: load the switcher. With `func`: call into the page, which reaches
+            // the switcher's direct entry if one is loaded. `deadMessaging` models a page
+            // open since before an update: code runs there, messages never arrive.
+            async executeScript({ target, files, func, args }) {
+              if (func) {
+                const h = b._direct[target.tabId];
+                if (h && args[0]?.type !== "switcher:ping") b._directSent.push({ tabId: target.tabId, msg: args[0] });
+                return [{ frameId: 0, result: h ? h(args[0]) : null }];
+              }
+              b._injected.push({ tabId: target.tabId, files });
+              const h = inject(target.tabId);
+              b._direct[target.tabId] = h;
+              if (!deadMessaging) b._content[target.tabId] = h;
+              return [{ frameId: 0, result: null }];
+            },
+          },
+        }
+      : {}),
     tabs: {
       onActivated: event(),
       onUpdated: event(),
@@ -108,6 +135,12 @@ function fakeBrowser({ tabs, content = {}, sessionData = {}, localData = {}, app
         }
       },
       async sendMessage(tabId, msg) {
+        // The background's "is the switcher alive here?" check is kept out of _sent.
+        // A page with a content script answers it; the test's handler never sees it.
+        if (msg?.type === "switcher:ping") {
+          b._pings.push(tabId);
+          return b._content[tabId] ? { ok: true } : undefined;
+        }
         b._sent.push({ tabId, msg });
         const h = b._content[tabId];
         if (!h) return undefined;
@@ -576,4 +609,72 @@ test("a new clear token from the app wipes icons and is remembered", async () =>
   await settle();
   assert.deepEqual(b.storage.session.data.state.icons, {});
   assert.equal(b.storage.local.data.clearToken, "t1");
+});
+
+const liveScript = () => (m) =>
+  m.type === "switcher:show" ? { ok: true, hasFocus: true, modifiersHeld: true, shown: true } : { ok: true };
+
+test("a page whose switcher is dead gets a fresh copy at press time and shows the switcher", async () => {
+  // Tab 1 has no live content script (the extension was turned off and on while it was open).
+  const b = fakeBrowser({ tabs: threeTabs(), sessionData: { healed: true }, inject: liveScript });
+  const { settle } = await boot(b);
+  b.press();
+  await settle();
+  assert.deepEqual(b._injected, [{ tabId: 1, files: ["content/switcher.js"] }]);
+  assert.deepEqual(b._sent.map((x) => x.msg.type), ["switcher:show"]);
+  assert.deepEqual(b._directSent.map((x) => x.msg.type), ["switcher:show"]);
+  assert.equal(b.session().mode, "overlay");
+  assert.equal(b.activeId(), 1); // no tab switch behind the user's back
+});
+
+test("a page whose messaging stays dead is driven directly: show, move and hide all arrive", async () => {
+  // Open since before an update: Safari runs code there but delivers no messages, even to
+  // a copy loaded afterwards. The on-load check loads a copy; presses then call it directly.
+  const b = fakeBrowser({ tabs: threeTabs(), inject: liveScript, deadMessaging: true });
+  const { settle } = await boot(b);
+  await settle();
+  assert.deepEqual(b._injected.map((x) => x.tabId).sort(), [1, 2]);
+  b.press();
+  await settle();
+  assert.equal(b._injected.length, 2); // the copy already there is reused
+  assert.equal(b.session().mode, "overlay");
+  b.press();
+  await settle();
+  b.release();
+  await settle();
+  assert.deepEqual(b._directSent.filter((x) => x.tabId === 1).map((x) => x.msg.type), ["switcher:show", "switcher:move", "switcher:hide"]);
+  assert.equal(b.session(), null);
+});
+
+test("where no script may run, a press still falls back to switching at once", async () => {
+  const inject = () => {
+    throw new Error("not allowed here");
+  };
+  const b = fakeBrowser({ tabs: threeTabs(), sessionData: { healed: true }, inject });
+  const { settle } = await boot(b);
+  b.press();
+  await settle();
+  assert.equal(b._injected.length, 1);
+  assert.equal(b.activeId(), 2);
+  assert.equal(b.session().mode, "fallback");
+});
+
+test("on load, open pages without a live switcher get one; live and empty pages are left alone", async () => {
+  const content = { 1: liveScript() };
+  const b = fakeBrowser({ tabs: threeTabs(), content, inject: liveScript });
+  const { settle } = await boot(b);
+  await settle();
+  // Tab 3 has no url. Tab 2 is asked again after its copy is loaded, to confirm it took.
+  assert.deepEqual(b._pings.sort(), [1, 2, 2]);
+  assert.deepEqual(b._injected.map((x) => x.tabId), [2]);
+
+  // A later wake of the same extension load does not check again...
+  const again = fakeBrowser({ tabs: threeTabs(), sessionData: { healed: true }, inject: liveScript });
+  const two = await boot(again);
+  await two.settle();
+  assert.deepEqual(again._pings, []);
+  // ...but an install/update/enable always does.
+  again.runtime.onInstalled.fire({});
+  await two.settle();
+  assert.deepEqual(again._injected.map((x) => x.tabId).sort(), [1, 2]);
 });

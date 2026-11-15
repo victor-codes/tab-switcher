@@ -46,6 +46,23 @@ const SPIKE_SESSION_KEYS = ["spikeSession"];
 
 let idleTimer = null;
 
+/**
+ * Diagnostics: a short line in the Mac's log (through the app's native handler, which
+ * writes it with os_log), so a problem can be read afterwards with
+ *   log show --last 10m --predicate 'subsystem == "com.example.tabflip"'
+ * Only event names, counts and timings: never a URL, title or anything from a page.
+ */
+const INSTANCE = Math.random().toString(36).slice(2, 6);
+function diag(what, data = {}) {
+  data = { ...data, i: INSTANCE };
+  try {
+    if (typeof api.runtime.sendNativeMessage !== "function") return;
+    Promise.resolve(api.runtime.sendNativeMessage("application.id", { type: "log", what, data })).catch(() => {});
+  } catch {
+    /* diagnostics must never break anything */
+  }
+}
+
 /** Resolves when every event received so far has been handled (used by tests). */
 export function whenIdle() {
   return queue.idle();
@@ -133,17 +150,127 @@ async function sendWithTimeout(tabId, msg, ms) {
   const timeout = new Promise((resolve) => {
     timer = setTimeout(() => resolve(TIMEOUT), ms);
   });
-  let rejected = false;
+  let rejected = null;
   const reply = Promise.resolve()
     .then(() => api.tabs.sendMessage(tabId, msg))
-    .catch(() => {
-      rejected = true;
+    .catch((e) => {
+      rejected = String((e && e.message) || e).slice(0, 120) || "rejected";
       return undefined;
     });
   const result = await Promise.race([reply, timeout]);
   clearTimeout(timer);
   if (result === TIMEOUT) return { timedOut: true };
-  return { timedOut: false, reply: rejected ? undefined : result };
+  return { timedOut: false, reply: rejected ? undefined : result, error: rejected };
+}
+
+/** Longest a press waits for a fresh copy of the switcher to load into the page. */
+const INJECT_BUDGET_MS = 400;
+const SWITCHER_FILE = "content/switcher.js";
+
+/**
+ * Load the switcher into a page that is already open. Safari only puts it into pages as
+ * they load, and each time the extension is updated or turned off and on, the copies in
+ * open pages go dead (they can no longer hear the background), so those pages would never
+ * show the switcher again until reloaded. Resolves true when the script ran.
+ * Fails quietly where Safari allows no script (Start Page, PDFs, denied sites).
+ */
+function summarize(res) {
+  try {
+    if (!Array.isArray(res)) return typeof res;
+    return res.map((r) => (r && r.error ? "err:" + String(r.error.message || r.error).slice(0, 80) : "f" + r?.frameId + ":" + typeof r?.result)).join(",");
+  } catch {
+    return "?";
+  }
+}
+
+/**
+ * Hand a message to the page's switcher by running a call in the page, for pages whose
+ * messaging is dead (see content/switcher.js, __tabflipDeliver). Resolves with the page's
+ * reply, null when the page has no switcher loaded, undefined when no code may run there.
+ */
+async function execDeliver(tabId, msg, ms = INJECT_BUDGET_MS) {
+  if (!isId(tabId) || typeof api.scripting?.executeScript !== "function") return undefined;
+  let timer;
+  const timeout = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(undefined), ms);
+  });
+  const run = Promise.resolve()
+    .then(() =>
+      api.scripting.executeScript({
+        target: { tabId },
+        func: (m) => (typeof globalThis.__tabflipDeliver === "function" ? globalThis.__tabflipDeliver(m) ?? null : null),
+        args: [msg],
+      })
+    )
+    .then((res) => (Array.isArray(res) && res[0] && !res[0].error ? res[0].result ?? null : undefined))
+    .catch(() => undefined);
+  const result = await Promise.race([run, timeout]);
+  clearTimeout(timer);
+  return result;
+}
+
+/** Send to the page's switcher by message, or directly where its messaging is dead. */
+async function deliver(tabId, msg) {
+  const reply = await send(tabId, msg);
+  if (reply !== undefined) return reply;
+  return execDeliver(tabId, msg);
+}
+
+async function injectSwitcher(tabId) {
+  if (!isId(tabId)) return { ok: false, error: "no tab" };
+  if (typeof api.scripting?.executeScript !== "function") return { ok: false, error: "no scripting API" };
+  let timer;
+  const timeout = new Promise((resolve) => {
+    timer = setTimeout(() => resolve({ ok: false, error: "timeout" }), INJECT_BUDGET_MS);
+  });
+  const run = Promise.resolve()
+    .then(() => api.scripting.executeScript({ target: { tabId }, files: [SWITCHER_FILE] }))
+    .then((res) => {
+      const sum = summarize(res);
+      return sum.startsWith("err:") ? { ok: false, error: sum.slice(4) } : { ok: true, res: sum };
+    })
+    .catch((e) => ({ ok: false, error: String((e && e.message) || e).slice(0, 120) }));
+  const result = await Promise.race([run, timeout]);
+  clearTimeout(timer);
+  return result;
+}
+
+/** Marks (per extension load) that open pages were already checked by healOpenTabs. */
+const HEALED_KEY = "healed";
+
+/**
+ * Give every open page that has no live switcher a fresh one. Runs once each time the
+ * extension is loaded (install, update, turned on, Safari start), off the event queue.
+ */
+async function healOpenTabs({ force = false } = {}) {
+  try {
+    if (!force && (await stateArea.get(HEALED_KEY))?.[HEALED_KEY]) return;
+    await stateArea.set({ [HEALED_KEY]: true });
+    const tabs = await api.tabs.query({});
+    const count = { tabs: tabs.length, noUrl: 0, alive: 0, slow: 0, injected: 0, failed: 0, error: "" };
+    await Promise.all(
+      tabs.map(async (t) => {
+        if (!isId(t.id) || !t.url) return void count.noUrl++; // empty or not yet loaded: Safari will load it itself
+        const r = await sendWithTimeout(t.id, { type: "switcher:ping" }, 1000);
+        if (r.timedOut) return void count.slow++;
+        if (r.reply?.ok === true) return void count.alive++;
+        const done = await injectSwitcher(t.id);
+        if (done.ok) {
+          count.injected++;
+          const again = await sendWithTimeout(t.id, { type: "switcher:ping" }, 1000);
+          if (again.reply?.ok === true) count.revived = (count.revived || 0) + 1;
+          else if ((await execDeliver(t.id, { type: "switcher:ping" }))?.ok === true) count.direct = (count.direct || 0) + 1;
+          else count.deaf = (count.deaf || 0) + 1;
+        } else {
+          count.failed++;
+          count.error ||= done.error;
+        }
+      })
+    );
+    diag("heal", count);
+  } catch (e) {
+    console.warn("[TabFlip] checking open pages failed", e);
+  }
 }
 
 async function buildItems(state, order, tabsById, settings) {
@@ -167,14 +294,45 @@ async function perform(state, eff, ctx) {
     case "show": {
       const items = await buildItems(state, eff.order, ctx.tabsById, ctx.settings);
       const msg = { type: "switcher:show", items, selectedIndex: eff.selectedIndex, modifiers: eff.modifiers ?? MODIFIERS, assumeHeld: eff.assumeHeld === true };
-      const r = await sendWithTimeout(eff.tabId, msg, eff.ackTimeoutMs);
+      const t0 = Date.now();
+      let r = await sendWithTimeout(eff.tabId, msg, eff.ackTimeoutMs);
+      const first = r.timedOut ? "timeout" : r.reply === undefined ? "none" : "reply";
+      let injected = null;
+      // No answer at all: the page's copy of the switcher is missing or dead (see
+      // injectSwitcher). Put a fresh one in and ask once more before giving up on it.
+      let via = "message";
+      if (first === "none") {
+        // Dead messaging but a live copy (loaded by healOpenTabs): call it directly.
+        let direct = await execDeliver(eff.tabId, msg);
+        if (direct === null) {
+          injected = await injectSwitcher(eff.tabId);
+          if (injected.ok) direct = await execDeliver(eff.tabId, msg);
+        }
+        if (direct) {
+          r = { timedOut: false, reply: direct };
+          via = "direct";
+        }
+      }
+// Logged only when the switcher did not appear, so a failure can be read afterwards.
+      if (r.timedOut || r.reply?.shown !== true)
+        diag("show", {
+          first,
+          injected: injected && (injected.ok ? "ok" : injected.error),
+          via,
+          final: r.timedOut ? "timeout" : r.reply === undefined ? "none" : r.reply?.shown === true ? "shown" : "notShown",
+          hasFocus: r.reply?.hasFocus,
+          held: r.reply?.modifiersHeld,
+          items: items.length,
+          hasUrl: !!ctx.tabsById?.get(eff.tabId)?.url,
+          ms: Date.now() - t0,
+        });
       return r.timedOut ? { type: "ackTimeout", token: eff.token } : { type: "ack", token: eff.token, reply: r.reply };
     }
     case "move":
-      send(eff.tabId, { type: "switcher:move", selectedIndex: eff.selectedIndex });
+      deliver(eff.tabId, { type: "switcher:move", selectedIndex: eff.selectedIndex });
       return null;
     case "hide":
-      send(eff.tabId, { type: "switcher:hide" });
+      deliver(eff.tabId, { type: "switcher:hide" });
       return null;
     case "activate":
       try {
@@ -277,6 +435,7 @@ function connectApp() {
     port.onMessage.addListener(onAppMessage);
     port.onDisconnect?.addListener(() => {
       if (appPort === port) appPort = null;
+      diag("port closed");
     });
     appPort = port;
   } catch (e) {
@@ -399,6 +558,7 @@ function onStartupOrInstalled() {
   job((state) => seedInto(state));
   syncFromApp();
   removeSpikeData();
+  healOpenTabs({ force: true });
   Promise.resolve()
     .then(() => api.tabs.query({}))
     .then((tabs) => shots.prune(tabs.map((t) => t.id)))
@@ -535,6 +695,11 @@ api.storage.onChanged?.addListener(onStorageChanged);
 // port the app's key presses arrive on.
 syncFromApp();
 connectApp();
+healOpenTabs();
+Promise.resolve()
+  .then(() => api.permissions?.contains?.({ origins: ["<all_urls>"] }))
+  .then((all) => diag("start", { allSites: all, scripting: typeof api.scripting?.executeScript === "function", port: !!appPort }))
+  .catch((e) => diag("start", { error: String(e).slice(0, 120) }));
 
 // Safari unloads an idle background after about 30 seconds, and a key press the app
 // sends while it is unloaded is dropped (dispatchMessage does not wake it). Visible

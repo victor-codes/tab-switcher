@@ -17,8 +17,19 @@
   "use strict";
 
   if (typeof browser === "undefined" || !browser.runtime || !browser.runtime.onMessage) return;
-  if (globalThis.__tabflipSwitcher) return; // guard against double injection
-  globalThis.__tabflipSwitcher = true;
+
+  // Only one copy of this script may be live in a page. When the extension is updated or
+  // turned off and on, the copy already in the page goes dead (it can't reach the
+  // background any more), and the background loads a fresh one. So a new copy never
+  // defers to an old one: it tells every earlier copy to stop, then takes over.
+  const RETIRE = "tabflip:retire";
+  try {
+    window.dispatchEvent(new Event(RETIRE));
+  } catch (e) {
+    /* ignore */
+  }
+  /** Aborted when a newer copy takes over: removes every listener registered with it. */
+  const life = new AbortController();
 
   // ---------------------------------------------------------------------------
   // Pure helpers (no DOM access). Exposed for the harness self-test below.
@@ -305,8 +316,8 @@
     return mods.every((m) => held.has(m));
   }
 
-  window.addEventListener("keydown", onKeyDown, true);
-  window.addEventListener("keyup", onKeyUp, true);
+  window.addEventListener("keydown", onKeyDown, { capture: true, signal: life.signal });
+  window.addEventListener("keyup", onKeyUp, { capture: true, signal: life.signal });
   window.addEventListener(
     "blur",
     (e) => {
@@ -314,21 +325,21 @@
       held.clear(); // we cannot see keys while unfocused
       if (session) finish("commit");
     },
-    true
+    { capture: true, signal: life.signal }
   );
   document.addEventListener(
     "visibilitychange",
     () => {
       if (document.visibilityState === "hidden" && session) finish("commit");
     },
-    true
+    { capture: true, signal: life.signal }
   );
   window.addEventListener(
     "pagehide",
     () => {
       if (session) finish("commit");
     },
-    true
+    { capture: true, signal: life.signal }
   );
 
   // Safari unloads the extension's idle background after about 30 seconds, and a key
@@ -350,7 +361,8 @@
         keepalive = null;
       }
     };
-    document.addEventListener("visibilitychange", syncKeepalive);
+    document.addEventListener("visibilitychange", syncKeepalive, { signal: life.signal });
+    life.signal.addEventListener("abort", () => clearInterval(keepalive));
     syncKeepalive();
   }
 
@@ -406,21 +418,51 @@
     return { ok: true, hasFocus, modifiersHeld, shown: !!session };
   }
 
-  browser.runtime.onMessage.addListener((msg) => {
-    if (!msg || typeof msg.type !== "string") return undefined;
+  /** Handle one message from the background; undefined when it is not ours. */
+  function handle(msg) {
+    if (life.signal.aborted || !msg || typeof msg.type !== "string") return undefined;
     switch (msg.type) {
+      case "switcher:ping":
+        // The background asks whether this page has a live copy (it loads one if not).
+        return { ok: true };
       case "switcher:show":
-        return Promise.resolve(onShow(msg));
+        return onShow(msg);
       case "switcher:move":
         if (session) select(msg.selectedIndex);
-        return Promise.resolve({ ok: true });
+        return { ok: true };
       case "switcher:hide":
         dropSession();
-        return Promise.resolve({ ok: true });
+        return { ok: true };
       default:
         return undefined; // not ours; let other listeners answer
     }
-  });
+  }
+
+  function onMessage(msg) {
+    const reply = handle(msg);
+    return reply === undefined ? undefined : Promise.resolve(reply);
+  }
+  // Second way in. In a page that was open before the extension was updated or turned off
+  // and on, Safari leaves this world's messaging dead in both directions, even for a copy
+  // loaded afterwards. The background can still run code here, so it calls this directly.
+  globalThis.__tabflipDeliver = handle;
+  browser.runtime.onMessage.addListener(onMessage);
+
+  // A newer copy took over (see RETIRE above): put everything down.
+  window.addEventListener(
+    RETIRE,
+    () => {
+      life.abort();
+      dropSession();
+      if (globalThis.__tabflipDeliver === handle) globalThis.__tabflipDeliver = undefined;
+      try {
+        browser.runtime.onMessage.removeListener(onMessage);
+      } catch (e) {
+        /* extension context gone */
+      }
+    },
+    { once: true }
+  );
 
   // ---------------------------------------------------------------------------
   // Overlay
@@ -884,7 +926,7 @@
   }
 
   if (document.readyState === "complete") sendMeta();
-  else window.addEventListener("load", sendMeta, { once: true });
+  else window.addEventListener("load", sendMeta, { once: true, signal: life.signal });
 
   // Test hook: only the harness defines this, before loading the script.
   if (typeof globalThis.__tabflipTestHook === "function") {

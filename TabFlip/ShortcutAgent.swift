@@ -112,7 +112,7 @@ final class HotKeys {
             let id = EventHotKeyID(signature: Self.signature, id: UInt32(index + 1))
             let status = RegisterEventHotKey(UInt32(keyCode), Self.carbonModifiers(shortcut), id,
                                              GetApplicationEventTarget(), 0, &ref)
-            if status == noErr, let ref { refs.append(ref); log.info("claimed \(ShortcutRules.display(shortcut), privacy: .public)") }
+            if status == noErr, let ref { refs.append(ref); log.notice("claimed \(ShortcutRules.display(shortcut), privacy: .public)") }
             else { log.error("could not claim \(ShortcutRules.display(shortcut), privacy: .public): \(status)") }
         }
         registered = pair

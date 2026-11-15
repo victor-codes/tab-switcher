@@ -9,6 +9,9 @@
 //
 
 import SafariServices
+import os
+
+private let diagLog = Logger(subsystem: "com.example.tabflip", category: "extension")
 
 class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
 
@@ -26,6 +29,13 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                 reply["settings"] = NSNull()
             }
             reply["clearToken"] = shared?.string(forKey: SharedSettings.clearTokenKey) ?? NSNull()
+        } else if message?["type"] as? String == "log" {
+            // Diagnostics from the background (event names, counts, timings; nothing from a page).
+            let what = message?["what"] as? String ?? "?"
+            let data = (message?["data"] as? [String: Any]).flatMap { try? JSONSerialization.data(withJSONObject: $0, options: [.sortedKeys]) }
+                .flatMap { String(data: $0, encoding: .utf8) } ?? ""
+            diagLog.notice("\(what, privacy: .public) \(data, privacy: .public)")
+            reply["ok"] = true
         } else {
             reply["error"] = "unknown request"
         }
