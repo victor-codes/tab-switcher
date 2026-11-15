@@ -22,6 +22,11 @@
 		A66738FA30A6FD0E0098F1B9 /* _locales in Resources */ = {isa = PBXBuildFile; fileRef = A66738F330A6FD0E0098F1B9 /* _locales */; };
 		C9539333BD9807CB43D1E7A6 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2E54C36BD1E07C14D6E3699 /* Cocoa.framework */; };
 		F35019D3AF4B41F712FA5196 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C2FDB1D81328B874DF3CE /* Settings.swift */; };
+		B1A0000000000000000000B1 /* SwitcherPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A0000000000000000000A1 /* SwitcherPanel.swift */; };
+		B1A0000000000000000000B2 /* SwitcherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A0000000000000000000A2 /* SwitcherView.swift */; };
+		B1A0000000000000000000B3 /* SnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A0000000000000000000A3 /* SnapshotStore.swift */; };
+		B1A0000000000000000000B4 /* PanelSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A0000000000000000000A4 /* PanelSession.swift */; };
+		B1A0000000000000000000B5 /* PanelFixture.json in Resources */ = {isa = PBXBuildFile; fileRef = B1A0000000000000000000A5 /* PanelFixture.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +71,11 @@
 		A66738F130A6FD0E0098F1B9 /* content */ = {isa = PBXFileReference; lastKnownFileType = folder; name = content; path = ../extension/content; sourceTree = "<group>"; };
 		A66738F230A6FD0E0098F1B9 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../extension/manifest.json; sourceTree = "<group>"; };
 		A66738F330A6FD0E0098F1B9 /* _locales */ = {isa = PBXFileReference; lastKnownFileType = folder; name = _locales; path = ../extension/_locales; sourceTree = "<group>"; };
+		B1A0000000000000000000A1 /* SwitcherPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitcherPanel.swift; sourceTree = "<group>"; };
+		B1A0000000000000000000A2 /* SwitcherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitcherView.swift; sourceTree = "<group>"; };
+		B1A0000000000000000000A3 /* SnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotStore.swift; sourceTree = "<group>"; };
+		B1A0000000000000000000A4 /* PanelSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelSession.swift; sourceTree = "<group>"; };
+		B1A0000000000000000000A5 /* PanelFixture.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = PanelFixture.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,6 +124,11 @@
 				A66738D430A6FD0E0098F1B9 /* Assets.xcassets */,
 				A66738D630A6FD0E0098F1B9 /* Info.plist */,
 				8ADFA39362849F90E241825C /* ShortcutAgent.swift */,
+				B1A0000000000000000000A1 /* SwitcherPanel.swift */,
+				B1A0000000000000000000A2 /* SwitcherView.swift */,
+				B1A0000000000000000000A3 /* SnapshotStore.swift */,
+				B1A0000000000000000000A4 /* PanelSession.swift */,
+				B1A0000000000000000000A5 /* PanelFixture.json */,
 			);
 			path = TabSwitcher;
 			sourceTree = "<group>";
@@ -241,6 +256,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A66738D530A6FD0E0098F1B9 /* Assets.xcassets in Resources */,
+				B1A0000000000000000000B5 /* PanelFixture.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -268,6 +284,10 @@
 				5A99CD59EABA4B9BBDA74F28 /* Settings.swift in Sources */,
 				A66738C430A6FD0C0098F1B9 /* TabSwitcherApp.swift in Sources */,
 				94C8C5726315273079463CB3 /* ShortcutAgent.swift in Sources */,
+				B1A0000000000000000000B1 /* SwitcherPanel.swift in Sources */,
+				B1A0000000000000000000B2 /* SwitcherView.swift in Sources */,
+				B1A0000000000000000000B3 /* SnapshotStore.swift in Sources */,
+				B1A0000000000000000000B4 /* PanelSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

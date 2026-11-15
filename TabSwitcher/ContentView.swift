@@ -209,6 +209,10 @@ struct ContentView: View {
                 Text("Show the switcher")
                 Text("When off, each press goes straight to the tab.")
             }
+            Toggle(isOn: $store.settings.panel) {
+                Text("Show the switcher above Safari")
+                Text("Draws the switcher in a window of this app, so it also appears over the Start Page, error pages and Screen Time. When off, it is drawn inside the page.")
+            }
             Toggle(isOn: $store.settings.previews) {
                 Text("Show page previews")
                 Text("Turning this off deletes saved previews.")

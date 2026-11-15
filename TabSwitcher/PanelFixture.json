@@ -1,0 +1,329 @@
+{
+ "1": {
+  "v": 1,
+  "instance": "fixture",
+  "seq": 1,
+  "windowId": 1,
+  "focused": true,
+  "private": false,
+  "items": [
+   {
+    "tabId": 100,
+    "title": "GitHub",
+    "host": "github.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAaElEQVR4nGOIqlhKEmKIrlpBEmKIrV1NEmKIr19PEmJIbNpEEmJIbtlGEmJIbd9JEmJI79xLEmLI7DlAEmLI6jtMEmLImXicJMSQN/kUSYihYNo5khBD0YyLJCGGktlXSUIMZXNvkIQAOFKwgHO4dNEAAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA1klEQVR4nNXCaS8CAACA4fd3RpRIEREhR7nv+8z9iYYxDGMYxjCMYRi/xu94nz0EWjbUCWQ21SlqLahT3LalTrB9W51gx446JdlddUpze+qEOvfVCXUdqBPuPlSnrOdInUjvsTqRvhN1yvtP1akYOFMnOniuTnToQp3K4Ut1YiNX6sRHr9WJj92oUzV+q071xJ06icl7dRJTD+rUTD+qUzvzpE5y9lmd5NyLOnXzr+rUL7ypk8q/q5Na/FCnYelTncblL3XSK9/qpFd/1Gla+1Wnef1P/R/8VgBAePN8PAAAAABJRU5ErkJggg=="
+   }
+  ]
+ },
+ "2": {
+  "v": 1,
+  "instance": "fixture",
+  "seq": 1,
+  "windowId": 1,
+  "focused": true,
+  "private": false,
+  "items": [
+   {
+    "tabId": 100,
+    "title": "GitHub",
+    "host": "github.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAaElEQVR4nGOIqlhKEmKIrlpBEmKIrV1NEmKIr19PEmJIbNpEEmJIbtlGEmJIbd9JEmJI79xLEmLI7DlAEmLI6jtMEmLImXicJMSQN/kUSYihYNo5khBD0YyLJCGGktlXSUIMZXNvkIQAOFKwgHO4dNEAAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA1klEQVR4nNXCaS8CAACA4fd3RpRIEREhR7nv+8z9iYYxDGMYxjCMYRi/xu94nz0EWjbUCWQ21SlqLahT3LalTrB9W51gx446JdlddUpze+qEOvfVCXUdqBPuPlSnrOdInUjvsTqRvhN1yvtP1akYOFMnOniuTnToQp3K4Ut1YiNX6sRHr9WJj92oUzV+q071xJ06icl7dRJTD+rUTD+qUzvzpE5y9lmd5NyLOnXzr+rUL7ypk8q/q5Na/FCnYelTncblL3XSK9/qpFd/1Gla+1Wnef1P/R/8VgBAePN8PAAAAABJRU5ErkJggg=="
+   },
+   {
+    "tabId": 101,
+    "title": "Hacker News",
+    "host": "news.ycombinator.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAZUlEQVR4nJXCSwaAUAAF0LvOkiTJ6/+TJJEkLSSiQTSIBhENokE0iJbTGu5x0AuJisGWqRhdhYrJV6mYQ42KJdapWFODii0zqdhzQcVRWFScpUPFVXlU3HVAxdNEVLxtQsXXpdQfUiOe8FD7NEIAAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0UlEQVR4nNXCCS4DAQBA0X/OUkop004702mnU1uttZ4DQQiCEAQhCEIQhNM4x395rAc5dTaCnDqb5R51tiq96myHeXV2qnl1dmt96uxF/ersxwV1DuKCOof1AXWOkkF1jhtFdU6aRXVO0yF1zlrD6pxnJXUuspI6l+0Rda7GRtW5Hg/UuZkI1LmdLKtzN1VR574TqvPQCdV5nK6q8zRTU+d5NlLnZS5S53U+Vudtoa7OezdR56ObqPO52FDna6mpzvdyqs7PSqrO72pLnb+1TP0f6etNcdss0mIAAAAASUVORK5CYII="
+   }
+  ]
+ },
+ "8": {
+  "v": 1,
+  "instance": "fixture",
+  "seq": 1,
+  "windowId": 1,
+  "focused": true,
+  "private": false,
+  "items": [
+   {
+    "tabId": 100,
+    "title": "GitHub",
+    "host": "github.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAaElEQVR4nGOIqlhKEmKIrlpBEmKIrV1NEmKIr19PEmJIbNpEEmJIbtlGEmJIbd9JEmJI79xLEmLI7DlAEmLI6jtMEmLImXicJMSQN/kUSYihYNo5khBD0YyLJCGGktlXSUIMZXNvkIQAOFKwgHO4dNEAAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA1klEQVR4nNXCaS8CAACA4fd3RpRIEREhR7nv+8z9iYYxDGMYxjCMYRi/xu94nz0EWjbUCWQ21SlqLahT3LalTrB9W51gx446JdlddUpze+qEOvfVCXUdqBPuPlSnrOdInUjvsTqRvhN1yvtP1akYOFMnOniuTnToQp3K4Ut1YiNX6sRHr9WJj92oUzV+q071xJ06icl7dRJTD+rUTD+qUzvzpE5y9lmd5NyLOnXzr+rUL7ypk8q/q5Na/FCnYelTncblL3XSK9/qpFd/1Gla+1Wnef1P/R/8VgBAePN8PAAAAABJRU5ErkJggg=="
+   },
+   {
+    "tabId": 101,
+    "title": "Hacker News",
+    "host": "news.ycombinator.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAZUlEQVR4nJXCSwaAUAAF0LvOkiTJ6/+TJJEkLSSiQTSIBhENokE0iJbTGu5x0AuJisGWqRhdhYrJV6mYQ42KJdapWFODii0zqdhzQcVRWFScpUPFVXlU3HVAxdNEVLxtQsXXpdQfUiOe8FD7NEIAAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0UlEQVR4nNXCCS4DAQBA0X/OUkop004702mnU1uttZ4DQQiCEAQhCEIQhNM4x395rAc5dTaCnDqb5R51tiq96myHeXV2qnl1dmt96uxF/ersxwV1DuKCOof1AXWOkkF1jhtFdU6aRXVO0yF1zlrD6pxnJXUuspI6l+0Rda7GRtW5Hg/UuZkI1LmdLKtzN1VR574TqvPQCdV5nK6q8zRTU+d5NlLnZS5S53U+Vudtoa7OezdR56ObqPO52FDna6mpzvdyqs7PSqrO72pLnb+1TP0f6etNcdss0mIAAAAASUVORK5CYII="
+   },
+   {
+    "tabId": 102,
+    "title": "A very long page title that does not fit on one line of a card at all",
+    "host": "example.org",
+    "icon": null,
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0ElEQVR4nNXChU4CAQCA4f9VFRVU1CMO7oAjLOzOGROdMWPGjBkzZjyXz/F/++jaCNTp3sypk9rKq5PaLqjTs1NUp3c3VKdvr6ROer+sTuYgUifTidTpP4zVGTiqqDN4XFUne1JTJ3uaqDN0Vldn+LyhzshFU53gsqVOcDWqTu56TJ38zbg6hdsJdYp3k+qE9211woe2OqXHKXXKT9PqRM8z6sQvs+rEr3PqVN7m1am+L6hT+1hUJ/lcUif5Wlan/r2iTuNnVZ3m75o6rb919X+3Yk0xCmQB9wAAAABJRU5ErkJggg=="
+   },
+   {
+    "tabId": 103,
+    "title": "Start Page",
+    "host": "",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAYklEQVR4nJXCUQaAQAAFwHe3UiqlUuo2kYhEJKXEskrRR0RERHSwzvDGoE0UKvpUpWLMNCpErlMhC4OKuTSpWCuLiq22qdgbh4qjc6k4B4+Ka/SpuEVAxSNDKt4pouJbYuoPDEyNkHjspK0AAAAASUVORK5CYII=",
+    "preview": null
+   },
+   {
+    "tabId": 104,
+    "title": "Documentation – Swift",
+    "host": "developer.apple.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAZElEQVR4nJXCQQaAQAAF0H/VJEmSJEkyJCIRiUgpGSJaRLSIiBYRnakz/OdBKB0VsTpQkWiSilSfqMiMmYrcXKgorJWK0t6oqJydito9qGi8k4rWv6jog5uKMXyokNFLxSQ+6g9uTriworztvAAAAABJRU5ErkJggg==",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0UlEQVR4nNXCiS4CAACA4f9VyRFCIUSpkLnvY47SLQwrwzDHMIyGR/Ic/7ePZEtWnVRrTp10IK/OZKCgzlRbUZ3p9rI6mY6KOjOdVXVmgzV15oLH6sx3naiz0H2qzmLPmTpLoXN1lkMX6qz01tVZ7Wuos9Z/qc56+EqdjfC1OpuRG3W2Bm7V2R68U2dn6F6d3eiDOnvRR3X2h5/UORh5Vic7+qJOLvaqzmHsTZ382Ls6hfEPdYrxT3VKiS91yolvdSoTTXWqyR91jlK/6tTSf+r/vtBRAF88P/AAAAAASUVORK5CYII="
+   },
+   {
+    "tabId": 105,
+    "title": "Inbox (3)",
+    "host": "mail.example.com",
+    "icon": null,
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAAyUlEQVR4nNXCCVIBAABA0X8/ElkSWbtPNSURyjKWQiRkG2VaztU5/ptH4LKsTuDqXp3gdUWd4E1VnaPbmjqhUl2d0F1DnePyozrhSlOdcLWlTuShrU6k1lHnpN5VJ9roqRN96qsTaw7Uibde1Im3h+okOiN1Et2xOqe9iTrJ/lSd5OBNnbPnmTqp4Vyd1GihTnq8VCf9+qHO+WStTma6UScz26qTfd+pk5vv1cktPtXJL7/Uya8O6hTW3+oUNz/qFLe/6lzs/tT/ASNgpDF6pCVtAAAAAElFTkSuQmCC"
+   },
+   {
+    "tabId": 106,
+    "title": "Maps",
+    "host": "maps.example.net",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAaElEQVR4nGOIqlhKEmKIrlpBEmKIrV1NEmKIr19PEmJIbNpEEmJIbtlGEmJIbd9JEmJI79xLEmLI7DlAEmLI6jtMEmLImXicJMSQN/kUSYihYNo5khBD0YyLJCGGktlXSUIMZXNvkIQAOFKwgHO4dNEAAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA1klEQVR4nNXCaS8CAACA4fd3RpRIEREhR7nv+8z9iYYxDGMYxjCMYRi/xu94nz0EWjbUCWQ21SlqLahT3LalTrB9W51gx446JdlddUpze+qEOvfVCXUdqBPuPlSnrOdInUjvsTqRvhN1yvtP1akYOFMnOniuTnToQp3K4Ut1YiNX6sRHr9WJj92oUzV+q071xJ06icl7dRJTD+rUTD+qUzvzpE5y9lmd5NyLOnXzr+rUL7ypk8q/q5Na/FCnYelTncblL3XSK9/qpFd/1Gla+1Wnef1P/R/8VgBAePN8PAAAAABJRU5ErkJggg=="
+   },
+   {
+    "tabId": 107,
+    "title": "日本語のタイトル",
+    "host": "example.jp",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAZUlEQVR4nJXCSwaAUAAF0LvOkiTJ6/+TJJEkLSSiQTSIBhENokE0iJbTGu5x0AuJisGWqRhdhYrJV6mYQ42KJdapWFODii0zqdhzQcVRWFScpUPFVXlU3HVAxdNEVLxtQsXXpdQfUiOe8FD7NEIAAAAASUVORK5CYII=",
+    "preview": null
+   }
+  ]
+ },
+ "30": {
+  "v": 1,
+  "instance": "fixture",
+  "seq": 1,
+  "windowId": 1,
+  "focused": true,
+  "private": false,
+  "items": [
+   {
+    "tabId": 100,
+    "title": "GitHub",
+    "host": "github.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAaElEQVR4nGOIqlhKEmKIrlpBEmKIrV1NEmKIr19PEmJIbNpEEmJIbtlGEmJIbd9JEmJI79xLEmLI7DlAEmLI6jtMEmLImXicJMSQN/kUSYihYNo5khBD0YyLJCGGktlXSUIMZXNvkIQAOFKwgHO4dNEAAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA1klEQVR4nNXCaS8CAACA4fd3RpRIEREhR7nv+8z9iYYxDGMYxjCMYRi/xu94nz0EWjbUCWQ21SlqLahT3LalTrB9W51gx446JdlddUpze+qEOvfVCXUdqBPuPlSnrOdInUjvsTqRvhN1yvtP1akYOFMnOniuTnToQp3K4Ut1YiNX6sRHr9WJj92oUzV+q071xJ06icl7dRJTD+rUTD+qUzvzpE5y9lmd5NyLOnXzr+rUL7ypk8q/q5Na/FCnYelTncblL3XSK9/qpFd/1Gla+1Wnef1P/R/8VgBAePN8PAAAAABJRU5ErkJggg=="
+   },
+   {
+    "tabId": 101,
+    "title": "Hacker News",
+    "host": "news.ycombinator.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAZUlEQVR4nJXCSwaAUAAF0LvOkiTJ6/+TJJEkLSSiQTSIBhENokE0iJbTGu5x0AuJisGWqRhdhYrJV6mYQ42KJdapWFODii0zqdhzQcVRWFScpUPFVXlU3HVAxdNEVLxtQsXXpdQfUiOe8FD7NEIAAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0UlEQVR4nNXCCS4DAQBA0X/OUkop004702mnU1uttZ4DQQiCEAQhCEIQhNM4x395rAc5dTaCnDqb5R51tiq96myHeXV2qnl1dmt96uxF/ersxwV1DuKCOof1AXWOkkF1jhtFdU6aRXVO0yF1zlrD6pxnJXUuspI6l+0Rda7GRtW5Hg/UuZkI1LmdLKtzN1VR574TqvPQCdV5nK6q8zRTU+d5NlLnZS5S53U+Vudtoa7OezdR56ObqPO52FDna6mpzvdyqs7PSqrO72pLnb+1TP0f6etNcdss0mIAAAAASUVORK5CYII="
+   },
+   {
+    "tabId": 102,
+    "title": "A very long page title that does not fit on one line of a card at all",
+    "host": "example.org",
+    "icon": null,
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0ElEQVR4nNXChU4CAQCA4f9VFRVU1CMO7oAjLOzOGROdMWPGjBkzZjyXz/F/++jaCNTp3sypk9rKq5PaLqjTs1NUp3c3VKdvr6ROer+sTuYgUifTidTpP4zVGTiqqDN4XFUne1JTJ3uaqDN0Vldn+LyhzshFU53gsqVOcDWqTu56TJ38zbg6hdsJdYp3k+qE9211woe2OqXHKXXKT9PqRM8z6sQvs+rEr3PqVN7m1am+L6hT+1hUJ/lcUif5Wlan/r2iTuNnVZ3m75o6rb919X+3Yk0xCmQB9wAAAABJRU5ErkJggg=="
+   },
+   {
+    "tabId": 103,
+    "title": "Start Page",
+    "host": "",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAYklEQVR4nJXCUQaAQAAFwHe3UiqlUuo2kYhEJKXEskrRR0RERHSwzvDGoE0UKvpUpWLMNCpErlMhC4OKuTSpWCuLiq22qdgbh4qjc6k4B4+Ka/SpuEVAxSNDKt4pouJbYuoPDEyNkHjspK0AAAAASUVORK5CYII=",
+    "preview": null
+   },
+   {
+    "tabId": 104,
+    "title": "Documentation – Swift",
+    "host": "developer.apple.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAZElEQVR4nJXCQQaAQAAF0H/VJEmSJEkyJCIRiUgpGSJaRLSIiBYRnakz/OdBKB0VsTpQkWiSilSfqMiMmYrcXKgorJWK0t6oqJydito9qGi8k4rWv6jog5uKMXyokNFLxSQ+6g9uTriworztvAAAAABJRU5ErkJggg==",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0UlEQVR4nNXCiS4CAACA4f9VyRFCIUSpkLnvY47SLQwrwzDHMIyGR/Ic/7ePZEtWnVRrTp10IK/OZKCgzlRbUZ3p9rI6mY6KOjOdVXVmgzV15oLH6sx3naiz0H2qzmLPmTpLoXN1lkMX6qz01tVZ7Wuos9Z/qc56+EqdjfC1OpuRG3W2Bm7V2R68U2dn6F6d3eiDOnvRR3X2h5/UORh5Vic7+qJOLvaqzmHsTZ382Ls6hfEPdYrxT3VKiS91yolvdSoTTXWqyR91jlK/6tTSf+r/vtBRAF88P/AAAAAASUVORK5CYII="
+   },
+   {
+    "tabId": 105,
+    "title": "Inbox (3)",
+    "host": "mail.example.com",
+    "icon": null,
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAAyUlEQVR4nNXCCVIBAABA0X8/ElkSWbtPNSURyjKWQiRkG2VaztU5/ptH4LKsTuDqXp3gdUWd4E1VnaPbmjqhUl2d0F1DnePyozrhSlOdcLWlTuShrU6k1lHnpN5VJ9roqRN96qsTaw7Uibde1Im3h+okOiN1Et2xOqe9iTrJ/lSd5OBNnbPnmTqp4Vyd1GihTnq8VCf9+qHO+WStTma6UScz26qTfd+pk5vv1cktPtXJL7/Uya8O6hTW3+oUNz/qFLe/6lzs/tT/ASNgpDF6pCVtAAAAAElFTkSuQmCC"
+   },
+   {
+    "tabId": 106,
+    "title": "Maps",
+    "host": "maps.example.net",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAaElEQVR4nGOIqlhKEmKIrlpBEmKIrV1NEmKIr19PEmJIbNpEEmJIbtlGEmJIbd9JEmJI79xLEmLI7DlAEmLI6jtMEmLImXicJMSQN/kUSYihYNo5khBD0YyLJCGGktlXSUIMZXNvkIQAOFKwgHO4dNEAAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA1klEQVR4nNXCaS8CAACA4fd3RpRIEREhR7nv+8z9iYYxDGMYxjCMYRi/xu94nz0EWjbUCWQ21SlqLahT3LalTrB9W51gx446JdlddUpze+qEOvfVCXUdqBPuPlSnrOdInUjvsTqRvhN1yvtP1akYOFMnOniuTnToQp3K4Ut1YiNX6sRHr9WJj92oUzV+q071xJ06icl7dRJTD+rUTD+qUzvzpE5y9lmd5NyLOnXzr+rUL7ypk8q/q5Na/FCnYelTncblL3XSK9/qpFd/1Gla+1Wnef1P/R/8VgBAePN8PAAAAABJRU5ErkJggg=="
+   },
+   {
+    "tabId": 107,
+    "title": "日本語のタイトル",
+    "host": "example.jp",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAZUlEQVR4nJXCSwaAUAAF0LvOkiTJ6/+TJJEkLSSiQTSIBhENokE0iJbTGu5x0AuJisGWqRhdhYrJV6mYQ42KJdapWFODii0zqdhzQcVRWFScpUPFVXlU3HVAxdNEVLxtQsXXpdQfUiOe8FD7NEIAAAAASUVORK5CYII=",
+    "preview": null
+   },
+   {
+    "tabId": 108,
+    "title": "GitHub 9",
+    "host": "github.com",
+    "icon": null,
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0ElEQVR4nNXChU4CAQCA4f9VFRVU1CMO7oAjLOzOGROdMWPGjBkzZjyXz/F/++jaCNTp3sypk9rKq5PaLqjTs1NUp3c3VKdvr6ROer+sTuYgUifTidTpP4zVGTiqqDN4XFUne1JTJ3uaqDN0Vldn+LyhzshFU53gsqVOcDWqTu56TJ38zbg6hdsJdYp3k+qE9211woe2OqXHKXXKT9PqRM8z6sQvs+rEr3PqVN7m1am+L6hT+1hUJ/lcUif5Wlan/r2iTuNnVZ3m75o6rb919X+3Yk0xCmQB9wAAAABJRU5ErkJggg=="
+   },
+   {
+    "tabId": 109,
+    "title": "Hacker News 10",
+    "host": "news.ycombinator.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAYklEQVR4nJXCUQaAQAAFwHe3UiqlUuo2kYhEJKXEskrRR0RERHSwzvDGoE0UKvpUpWLMNCpErlMhC4OKuTSpWCuLiq22qdgbh4qjc6k4B4+Ka/SpuEVAxSNDKt4pouJbYuoPDEyNkHjspK0AAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAAzklEQVR4nNXCBU4CAABA0X83AQkBCQFPYzNCsUEkJCRmzJgx0RkzzuU5/tujvjKnTmM1oM7JWkCd5npQndZGUJ32ZkidzlZInW5xXp1eKaxOvxxWZ1CJqDOsRtQZbUfVGe9E1ZnUYupMd2PqXOwtqHO5H1fn6iCuzvVhQp2bo4Q6t8dJde7qSXXuG4vqPDRT6jyeptR5aqXVeW6n1XnpZNSZdTPqvJ5l1XnrZdV57y+p8zHIqfM5zKnzdZ5X53uUV+dnXFDnd1JQ52+6rP4POB2d4taBN/kAAAAASUVORK5CYII="
+   },
+   {
+    "tabId": 110,
+    "title": "A very long page title that does not fit on one line of a card at all 11",
+    "host": "example.org",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAZElEQVR4nJXCQQaAQAAF0H/VJEmSJEkyJCIRiUgpGSJaRLSIiBYRnakz/OdBKB0VsTpQkWiSilSfqMiMmYrcXKgorJWK0t6oqJydito9qGi8k4rWv6jog5uKMXyokNFLxSQ+6g9uTriworztvAAAAABJRU5ErkJggg==",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0UlEQVR4nNXCiS4CAACA4f9VyRFCIUSpkLnvY47SLQwrwzDHMIyGR/Ic/7ePZEtWnVRrTp10IK/OZKCgzlRbUZ3p9rI6mY6KOjOdVXVmgzV15oLH6sx3naiz0H2qzmLPmTpLoXN1lkMX6qz01tVZ7Wuos9Z/qc56+EqdjfC1OpuRG3W2Bm7V2R68U2dn6F6d3eiDOnvRR3X2h5/UORh5Vic7+qJOLvaqzmHsTZ382Ls6hfEPdYrxT3VKiS91yolvdSoTTXWqyR91jlK/6tTSf+r/vtBRAF88P/AAAAAASUVORK5CYII="
+   },
+   {
+    "tabId": 111,
+    "title": "Start Page 12",
+    "host": "",
+    "icon": null,
+    "preview": null
+   },
+   {
+    "tabId": 112,
+    "title": "Documentation – Swift 13",
+    "host": "developer.apple.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAaElEQVR4nGOIqlhKEmKIrlpBEmKIrV1NEmKIr19PEmJIbNpEEmJIbtlGEmJIbd9JEmJI79xLEmLI7DlAEmLI6jtMEmLImXicJMSQN/kUSYihYNo5khBD0YyLJCGGktlXSUIMZXNvkIQAOFKwgHO4dNEAAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA1klEQVR4nNXCaS8CAACA4fd3RpRIEREhR7nv+8z9iYYxDGMYxjCMYRi/xu94nz0EWjbUCWQ21SlqLahT3LalTrB9W51gx446JdlddUpze+qEOvfVCXUdqBPuPlSnrOdInUjvsTqRvhN1yvtP1akYOFMnOniuTnToQp3K4Ut1YiNX6sRHr9WJj92oUzV+q071xJ06icl7dRJTD+rUTD+qUzvzpE5y9lmd5NyLOnXzr+rUL7ypk8q/q5Na/FCnYelTncblL3XSK9/qpFd/1Gla+1Wnef1P/R/8VgBAePN8PAAAAABJRU5ErkJggg=="
+   },
+   {
+    "tabId": 113,
+    "title": "Inbox (3) 14",
+    "host": "mail.example.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAZUlEQVR4nJXCSwaAUAAF0LvOkiTJ6/+TJJEkLSSiQTSIBhENokE0iJbTGu5x0AuJisGWqRhdhYrJV6mYQ42KJdapWFODii0zqdhzQcVRWFScpUPFVXlU3HVAxdNEVLxtQsXXpdQfUiOe8FD7NEIAAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0UlEQVR4nNXCCS4DAQBA0X/OUkop004702mnU1uttZ4DQQiCEAQhCEIQhNM4x395rAc5dTaCnDqb5R51tiq96myHeXV2qnl1dmt96uxF/ersxwV1DuKCOof1AXWOkkF1jhtFdU6aRXVO0yF1zlrD6pxnJXUuspI6l+0Rda7GRtW5Hg/UuZkI1LmdLKtzN1VR574TqvPQCdV5nK6q8zRTU+d5NlLnZS5S53U+Vudtoa7OezdR56ObqPO52FDna6mpzvdyqs7PSqrO72pLnb+1TP0f6etNcdss0mIAAAAASUVORK5CYII="
+   },
+   {
+    "tabId": 114,
+    "title": "Maps 15",
+    "host": "maps.example.net",
+    "icon": null,
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0ElEQVR4nNXChU4CAQCA4f9VFRVU1CMO7oAjLOzOGROdMWPGjBkzZjyXz/F/++jaCNTp3sypk9rKq5PaLqjTs1NUp3c3VKdvr6ROer+sTuYgUifTidTpP4zVGTiqqDN4XFUne1JTJ3uaqDN0Vldn+LyhzshFU53gsqVOcDWqTu56TJ38zbg6hdsJdYp3k+qE9211woe2OqXHKXXKT9PqRM8z6sQvs+rEr3PqVN7m1am+L6hT+1hUJ/lcUif5Wlan/r2iTuNnVZ3m75o6rb919X+3Yk0xCmQB9wAAAABJRU5ErkJggg=="
+   },
+   {
+    "tabId": 115,
+    "title": "日本語のタイトル 16",
+    "host": "example.jp",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAYklEQVR4nJXCUQaAQAAFwHe3UiqlUuo2kYhEJKXEskrRR0RERHSwzvDGoE0UKvpUpWLMNCpErlMhC4OKuTSpWCuLiq22qdgbh4qjc6k4B4+Ka/SpuEVAxSNDKt4pouJbYuoPDEyNkHjspK0AAAAASUVORK5CYII=",
+    "preview": null
+   },
+   {
+    "tabId": 116,
+    "title": "GitHub 17",
+    "host": "github.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAZElEQVR4nJXCQQaAQAAF0H/VJEmSJEkyJCIRiUgpGSJaRLSIiBYRnakz/OdBKB0VsTpQkWiSilSfqMiMmYrcXKgorJWK0t6oqJydito9qGi8k4rWv6jog5uKMXyokNFLxSQ+6g9uTriworztvAAAAABJRU5ErkJggg==",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0UlEQVR4nNXCiS4CAACA4f9VyRFCIUSpkLnvY47SLQwrwzDHMIyGR/Ic/7ePZEtWnVRrTp10IK/OZKCgzlRbUZ3p9rI6mY6KOjOdVXVmgzV15oLH6sx3naiz0H2qzmLPmTpLoXN1lkMX6qz01tVZ7Wuos9Z/qc56+EqdjfC1OpuRG3W2Bm7V2R68U2dn6F6d3eiDOnvRR3X2h5/UORh5Vic7+qJOLvaqzmHsTZ382Ls6hfEPdYrxT3VKiS91yolvdSoTTXWqyR91jlK/6tTSf+r/vtBRAF88P/AAAAAASUVORK5CYII="
+   },
+   {
+    "tabId": 117,
+    "title": "Hacker News 18",
+    "host": "news.ycombinator.com",
+    "icon": null,
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAAyUlEQVR4nNXCCVIBAABA0X8/ElkSWbtPNSURyjKWQiRkG2VaztU5/ptH4LKsTuDqXp3gdUWd4E1VnaPbmjqhUl2d0F1DnePyozrhSlOdcLWlTuShrU6k1lHnpN5VJ9roqRN96qsTaw7Uibde1Im3h+okOiN1Et2xOqe9iTrJ/lSd5OBNnbPnmTqp4Vyd1GihTnq8VCf9+qHO+WStTma6UScz26qTfd+pk5vv1cktPtXJL7/Uya8O6hTW3+oUNz/qFLe/6lzs/tT/ASNgpDF6pCVtAAAAAElFTkSuQmCC"
+   },
+   {
+    "tabId": 118,
+    "title": "A very long page title that does not fit on one line of a card at all 19",
+    "host": "example.org",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAaElEQVR4nGOIqlhKEmKIrlpBEmKIrV1NEmKIr19PEmJIbNpEEmJIbtlGEmJIbd9JEmJI79xLEmLI7DlAEmLI6jtMEmLImXicJMSQN/kUSYihYNo5khBD0YyLJCGGktlXSUIMZXNvkIQAOFKwgHO4dNEAAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA1klEQVR4nNXCaS8CAACA4fd3RpRIEREhR7nv+8z9iYYxDGMYxjCMYRi/xu94nz0EWjbUCWQ21SlqLahT3LalTrB9W51gx446JdlddUpze+qEOvfVCXUdqBPuPlSnrOdInUjvsTqRvhN1yvtP1akYOFMnOniuTnToQp3K4Ut1YiNX6sRHr9WJj92oUzV+q071xJ06icl7dRJTD+rUTD+qUzvzpE5y9lmd5NyLOnXzr+rUL7ypk8q/q5Na/FCnYelTncblL3XSK9/qpFd/1Gla+1Wnef1P/R/8VgBAePN8PAAAAABJRU5ErkJggg=="
+   },
+   {
+    "tabId": 119,
+    "title": "Start Page 20",
+    "host": "",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAZUlEQVR4nJXCSwaAUAAF0LvOkiTJ6/+TJJEkLSSiQTSIBhENokE0iJbTGu5x0AuJisGWqRhdhYrJV6mYQ42KJdapWFODii0zqdhzQcVRWFScpUPFVXlU3HVAxdNEVLxtQsXXpdQfUiOe8FD7NEIAAAAASUVORK5CYII=",
+    "preview": null
+   },
+   {
+    "tabId": 120,
+    "title": "Documentation – Swift 21",
+    "host": "developer.apple.com",
+    "icon": null,
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0ElEQVR4nNXChU4CAQCA4f9VFRVU1CMO7oAjLOzOGROdMWPGjBkzZjyXz/F/++jaCNTp3sypk9rKq5PaLqjTs1NUp3c3VKdvr6ROer+sTuYgUifTidTpP4zVGTiqqDN4XFUne1JTJ3uaqDN0Vldn+LyhzshFU53gsqVOcDWqTu56TJ38zbg6hdsJdYp3k+qE9211woe2OqXHKXXKT9PqRM8z6sQvs+rEr3PqVN7m1am+L6hT+1hUJ/lcUif5Wlan/r2iTuNnVZ3m75o6rb919X+3Yk0xCmQB9wAAAABJRU5ErkJggg=="
+   },
+   {
+    "tabId": 121,
+    "title": "Inbox (3) 22",
+    "host": "mail.example.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAYklEQVR4nJXCUQaAQAAFwHe3UiqlUuo2kYhEJKXEskrRR0RERHSwzvDGoE0UKvpUpWLMNCpErlMhC4OKuTSpWCuLiq22qdgbh4qjc6k4B4+Ka/SpuEVAxSNDKt4pouJbYuoPDEyNkHjspK0AAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAAzklEQVR4nNXCBU4CAABA0X83AQkBCQFPYzNCsUEkJCRmzJgx0RkzzuU5/tujvjKnTmM1oM7JWkCd5npQndZGUJ32ZkidzlZInW5xXp1eKaxOvxxWZ1CJqDOsRtQZbUfVGe9E1ZnUYupMd2PqXOwtqHO5H1fn6iCuzvVhQp2bo4Q6t8dJde7qSXXuG4vqPDRT6jyeptR5aqXVeW6n1XnpZNSZdTPqvJ5l1XnrZdV57y+p8zHIqfM5zKnzdZ5X53uUV+dnXFDnd1JQ52+6rP4POB2d4taBN/kAAAAASUVORK5CYII="
+   },
+   {
+    "tabId": 122,
+    "title": "Maps 23",
+    "host": "maps.example.net",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAZElEQVR4nJXCQQaAQAAF0H/VJEmSJEkyJCIRiUgpGSJaRLSIiBYRnakz/OdBKB0VsTpQkWiSilSfqMiMmYrcXKgorJWK0t6oqJydito9qGi8k4rWv6jog5uKMXyokNFLxSQ+6g9uTriworztvAAAAABJRU5ErkJggg==",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0UlEQVR4nNXCiS4CAACA4f9VyRFCIUSpkLnvY47SLQwrwzDHMIyGR/Ic/7ePZEtWnVRrTp10IK/OZKCgzlRbUZ3p9rI6mY6KOjOdVXVmgzV15oLH6sx3naiz0H2qzmLPmTpLoXN1lkMX6qz01tVZ7Wuos9Z/qc56+EqdjfC1OpuRG3W2Bm7V2R68U2dn6F6d3eiDOnvRR3X2h5/UORh5Vic7+qJOLvaqzmHsTZ382Ls6hfEPdYrxT3VKiS91yolvdSoTTXWqyR91jlK/6tTSf+r/vtBRAF88P/AAAAAASUVORK5CYII="
+   },
+   {
+    "tabId": 123,
+    "title": "日本語のタイトル 24",
+    "host": "example.jp",
+    "icon": null,
+    "preview": null
+   },
+   {
+    "tabId": 124,
+    "title": "GitHub 25",
+    "host": "github.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAaElEQVR4nGOIqlhKEmKIrlpBEmKIrV1NEmKIr19PEmJIbNpEEmJIbtlGEmJIbd9JEmJI79xLEmLI7DlAEmLI6jtMEmLImXicJMSQN/kUSYihYNo5khBD0YyLJCGGktlXSUIMZXNvkIQAOFKwgHO4dNEAAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA1klEQVR4nNXCaS8CAACA4fd3RpRIEREhR7nv+8z9iYYxDGMYxjCMYRi/xu94nz0EWjbUCWQ21SlqLahT3LalTrB9W51gx446JdlddUpze+qEOvfVCXUdqBPuPlSnrOdInUjvsTqRvhN1yvtP1akYOFMnOniuTnToQp3K4Ut1YiNX6sRHr9WJj92oUzV+q071xJ06icl7dRJTD+rUTD+qUzvzpE5y9lmd5NyLOnXzr+rUL7ypk8q/q5Na/FCnYelTncblL3XSK9/qpFd/1Gla+1Wnef1P/R/8VgBAePN8PAAAAABJRU5ErkJggg=="
+   },
+   {
+    "tabId": 125,
+    "title": "Hacker News 26",
+    "host": "news.ycombinator.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAZUlEQVR4nJXCSwaAUAAF0LvOkiTJ6/+TJJEkLSSiQTSIBhENokE0iJbTGu5x0AuJisGWqRhdhYrJV6mYQ42KJdapWFODii0zqdhzQcVRWFScpUPFVXlU3HVAxdNEVLxtQsXXpdQfUiOe8FD7NEIAAAAASUVORK5CYII=",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0UlEQVR4nNXCCS4DAQBA0X/OUkop004702mnU1uttZ4DQQiCEAQhCEIQhNM4x395rAc5dTaCnDqb5R51tiq96myHeXV2qnl1dmt96uxF/ersxwV1DuKCOof1AXWOkkF1jhtFdU6aRXVO0yF1zlrD6pxnJXUuspI6l+0Rda7GRtW5Hg/UuZkI1LmdLKtzN1VR574TqvPQCdV5nK6q8zRTU+d5NlLnZS5S53U+Vudtoa7OezdR56ObqPO52FDna6mpzvdyqs7PSqrO72pLnb+1TP0f6etNcdss0mIAAAAASUVORK5CYII="
+   },
+   {
+    "tabId": 126,
+    "title": "A very long page title that does not fit on one line of a card at all 27",
+    "host": "example.org",
+    "icon": null,
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0ElEQVR4nNXChU4CAQCA4f9VFRVU1CMO7oAjLOzOGROdMWPGjBkzZjyXz/F/++jaCNTp3sypk9rKq5PaLqjTs1NUp3c3VKdvr6ROer+sTuYgUifTidTpP4zVGTiqqDN4XFUne1JTJ3uaqDN0Vldn+LyhzshFU53gsqVOcDWqTu56TJ38zbg6hdsJdYp3k+qE9211woe2OqXHKXXKT9PqRM8z6sQvs+rEr3PqVN7m1am+L6hT+1hUJ/lcUif5Wlan/r2iTuNnVZ3m75o6rb919X+3Yk0xCmQB9wAAAABJRU5ErkJggg=="
+   },
+   {
+    "tabId": 127,
+    "title": "Start Page 28",
+    "host": "",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAYklEQVR4nJXCUQaAQAAFwHe3UiqlUuo2kYhEJKXEskrRR0RERHSwzvDGoE0UKvpUpWLMNCpErlMhC4OKuTSpWCuLiq22qdgbh4qjc6k4B4+Ka/SpuEVAxSNDKt4pouJbYuoPDEyNkHjspK0AAAAASUVORK5CYII=",
+    "preview": null
+   },
+   {
+    "tabId": 128,
+    "title": "Documentation – Swift 29",
+    "host": "developer.apple.com",
+    "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAZElEQVR4nJXCQQaAQAAF0H/VJEmSJEkyJCIRiUgpGSJaRLSIiBYRnakz/OdBKB0VsTpQkWiSilSfqMiMmYrcXKgorJWK0t6oqJydito9qGi8k4rWv6jog5uKMXyokNFLxSQ+6g9uTriworztvAAAAABJRU5ErkJggg==",
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAA0UlEQVR4nNXCiS4CAACA4f9VyRFCIUSpkLnvY47SLQwrwzDHMIyGR/Ic/7ePZEtWnVRrTp10IK/OZKCgzlRbUZ3p9rI6mY6KOjOdVXVmgzV15oLH6sx3naiz0H2qzmLPmTpLoXN1lkMX6qz01tVZ7Wuos9Z/qc56+EqdjfC1OpuRG3W2Bm7V2R68U2dn6F6d3eiDOnvRR3X2h5/UORh5Vic7+qJOLvaqzmHsTZ382Ls6hfEPdYrxT3VKiS91yolvdSoTTXWqyR91jlK/6tTSf+r/vtBRAF88P/AAAAAASUVORK5CYII="
+   },
+   {
+    "tabId": 129,
+    "title": "Inbox (3) 30",
+    "host": "mail.example.com",
+    "icon": null,
+    "preview": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAoCAIAAADBrGu+AAAAyUlEQVR4nNXCCVIBAABA0X8/ElkSWbtPNSURyjKWQiRkG2VaztU5/ptH4LKsTuDqXp3gdUWd4E1VnaPbmjqhUl2d0F1DnePyozrhSlOdcLWlTuShrU6k1lHnpN5VJ9roqRN96qsTaw7Uibde1Im3h+okOiN1Et2xOqe9iTrJ/lSd5OBNnbPnmTqp4Vyd1GihTnq8VCf9+qHO+WStTma6UScz26qTfd+pk5vv1cktPtXJL7/Uya8O6hTW3+oUNz/qFLe/6lzs/tT/ASNgpDF6pCVtAAAAAElFTkSuQmCC"
+   }
+  ]
+ }
+}
