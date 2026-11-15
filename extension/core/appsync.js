@@ -3,7 +3,7 @@
 // The app is the only place to configure Tab Switcher. It saves its settings in a shared App
 // Group; the extension's native handler (SafariWebExtensionHandler.swift) reads them and
 // answers `browser.runtime.sendNativeMessage(..., { type: "settings:get" })` with
-//   { settings: { overlay, previews, maxItems, shortcuts } | null, clearToken: string | null }.
+//   { settings: { overlay, previews, panel, maxItems, shortcuts } | null, clearToken: string | null }.
 // The background copies them into storage.local ("settings"), which everything else
 // already reads and watches. A new clearToken means the user pressed "Clear…" in the app.
 

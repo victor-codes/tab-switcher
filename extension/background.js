@@ -14,6 +14,7 @@ import { createQueue, createStore, SETTINGS_KEY, STATE_KEY } from "./core/store.
 import { CLEAR_TOKEN_KEY, planSync } from "./core/appsync.js";
 import * as previews from "./core/previews.js";
 import { holdModifiers } from "./core/shortcuts.js";
+import { buildSnapshot, holdFor, sameContent, shouldPush } from "./core/snapshot.js";
 
 const api = globalThis.browser;
 const stateArea = api.storage.session ?? api.storage.local;
@@ -24,8 +25,24 @@ const queue = createQueue();
  * Previews run on their own serial queue (core/previews.js) so a capture never delays a
  * command. A capture is skipped while a switch session is running.
  */
+/** The state area, reporting each stored preview so the app's snapshot can carry it. */
+const previewArea = {
+  get: (k) => stateArea.get(k),
+  remove: (k) => stateArea.remove(k),
+  async set(obj) {
+    await stateArea.set(obj);
+    try {
+      for (const key of Object.keys(obj || {})) {
+        const id = previews.tabIdOfKey(key);
+        if (id !== null) queuePushForTab(id);
+      }
+    } catch {
+      /* a snapshot must never break a capture */
+    }
+  },
+};
 const shots = previews.createPreviews({
-  area: stateArea,
+  area: previewArea,
   tabs: api.tabs,
   loadSettings: () => store.loadSettings(),
   isSessionActive: async () => {
@@ -65,7 +82,7 @@ function diag(what, data = {}) {
 
 /** Resolves when every event received so far has been handled (used by tests). */
 export function whenIdle() {
-  return queue.idle();
+  return Promise.all([queue.idle(), sendChain]).then(() => undefined);
 }
 
 function isId(v) {
@@ -423,6 +440,25 @@ function onAppMessage(msg) {
   const info = msg.userInfo && typeof msg.userInfo === "object" ? msg.userInfo : msg;
   if (name === "flip") onPageShortcut(null, Number(info.dir) === -1 ? -1 : 1);
   else if (name === "release") job((state) => reduce(state, { type: "release" }));
+  else if (name === "activate") onActivate(info.windowId, info.tabId);
+}
+
+/**
+ * The panel in the app chose a tab. Both backgrounds get this; the one that does not know
+ * the tab in that window (the empty one) ignores it silently.
+ */
+function onActivate(windowId, tabId) {
+  if (!isId(windowId) || !isId(tabId)) return;
+  job(async (state) => {
+    if (!mru.list(state.mru, windowId).includes(tabId)) return;
+    try {
+      await api.tabs.update(tabId, { active: true });
+    } catch (e) {
+      console.warn("[Tab Switcher] activate failed", tabId, e);
+      return;
+    }
+    state.mru = mru.activated(state.mru, windowId, tabId);
+  });
 }
 
 let appPort = null;
@@ -444,15 +480,127 @@ function connectApp() {
 }
 
 // ---------------------------------------------------------------------------
+// Snapshots for the app's panel (core/snapshot.js)
+//
+// The app draws the switcher from the latest snapshot of each window, pushed here through
+// the native handler. Held in memory only: after an unload the instance id changes, so the
+// app takes the first push of the new copy whatever its seq.
+
+/** windowId -> { snap, at } of the last push (snap.focused is kept current by focus changes). */
+const lastPushed = new Map();
+/** windowId -> timer of a push held back by the throttle. */
+const holdTimers = new Map();
+/** Pushes go out one after another, in order, without blocking the event queue. */
+let sendChain = Promise.resolve();
+let pushSeq = 0;
+let focusedWindowId = null;
+
+async function currentFocusedWindow() {
+  if (isId(focusedWindowId)) return focusedWindowId;
+  try {
+    const [active] = await api.tabs.query({ active: true, currentWindow: true });
+    if (active && isId(active.windowId)) focusedWindowId = active.windowId;
+  } catch {
+    /* unknown: nothing is marked focused */
+  }
+  return focusedWindowId;
+}
+
+/** Build the window's snapshot and push it unless it is empty, unchanged or throttled. */
+async function pushWindow(state, windowId, settings, onlyTabId) {
+  if (settings.panel === false || !isId(windowId) || typeof api.runtime.sendNativeMessage !== "function") return;
+  const tabsById = await syncWindow(state, windowId);
+  const order = mru.list(state.mru, windowId);
+  if (onlyTabId !== undefined && !order.slice(0, settings.maxItems).includes(onlyTabId)) return;
+  const priv = [...tabsById.values()].some((t) => t.incognito === true);
+  const shotById = settings.previews === false || priv ? {} : await shots.getMany(order.slice(0, settings.maxItems), { budgetMs: PREVIEW_BUDGET_MS });
+  const snap = buildSnapshot({
+    instance: INSTANCE,
+    seq: pushSeq + 1,
+    windowId,
+    focused: windowId === (await currentFocusedWindow()),
+    private: priv,
+    order,
+    tabsById,
+    icons: state.icons,
+    previews: shotById,
+    settings,
+  });
+  if (!snap) return; // this copy sees no tabs: stay silent
+  const now = Date.now();
+  const last = lastPushed.get(windowId);
+  if (!shouldPush(last?.snap, snap, now, last?.at)) {
+    const wait = holdFor(now, last?.at);
+    if (wait > 0 && !sameContent(last?.snap, snap) && !holdTimers.has(windowId)) {
+      holdTimers.set(
+        windowId,
+        setTimeout(() => {
+          holdTimers.delete(windowId);
+          queuePush(windowId);
+        }, wait)
+      );
+    }
+    return;
+  }
+  pushSeq = snap.seq;
+  lastPushed.set(windowId, { snap, at: now });
+  sendChain = sendChain.then(async () => {
+    const t0 = Date.now();
+    let delivered = null;
+    try {
+      const reply = await api.runtime.sendNativeMessage("application.id", { type: "snapshot:push", snapshot: snap });
+      delivered = reply?.delivered === true;
+    } catch {
+      delivered = false;
+    }
+    diag("snapshot", { w: windowId, seq: snap.seq, items: snap.items.length, previews: snap.items.filter((i) => i.preview).length, focused: snap.focused, delivered, ms: Date.now() - t0 });
+  });
+}
+
+function queuePush(windowId, onlyTabId) {
+  if (!isId(windowId)) return Promise.resolve();
+  return job((state, settings) => pushWindow(state, windowId, settings, onlyTabId), { settings: true });
+}
+
+function queuePushForTab(tabId) {
+  return job(
+    async (state, settings) => {
+      const windowId = mru.windowOf(state.mru, tabId);
+      if (isId(windowId)) await pushWindow(state, windowId, settings);
+    },
+    { settings: true }
+  );
+}
+
+/** Every window this copy knows (start, settings turned on). */
+function queuePushAll() {
+  return job(
+    async (state, settings) => {
+      let tabs = [];
+      try {
+        tabs = await api.tabs.query({});
+      } catch {
+        return;
+      }
+      for (const w of new Set(tabs.map((t) => t.windowId))) await pushWindow(state, w, settings);
+    },
+    { settings: true }
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Tab and window events
 
 function onActivated(info) {
   if (!info || !isId(info.tabId) || !isId(info.windowId)) return;
   job((state) => reduce(state, { type: "activated", windowId: info.windowId, tabId: info.tabId }));
   shots.schedule(info.tabId, info.windowId);
+  queuePush(info.windowId);
 }
 
 function onUpdated(tabId, change, tab) {
+  // A listed tab's title or address changed: the app's list shows both.
+  if ((change?.title !== undefined || change?.url !== undefined) && isId(tab?.windowId)) queuePush(tab.windowId, tabId);
   // The active tab finished loading: refresh its preview.
   if (change?.status !== "complete" || !tab?.active || !isId(tab.windowId)) return;
   shots.schedule(tabId, tab.windowId);
@@ -470,6 +618,7 @@ function onCreated(tab) {
       state.mru = mru.created(state.mru, tab.windowId, tab.id);
     }
   });
+  queuePush(tab.windowId);
 }
 
 function onRemoved(tabId, info) {
@@ -479,6 +628,7 @@ function onRemoved(tabId, info) {
     await reduce(state, { type: "external", reason: "removed" });
   });
   shots.remove(tabId);
+  if (!info?.isWindowClosing) queuePush(info?.windowId);
 }
 
 function onReplaced(addedTabId, removedTabId) {
@@ -497,6 +647,7 @@ function onAttached(tabId, info) {
     state.mru = mru.attached(state.mru, info?.newWindowId, tabId);
     await reduce(state, { type: "external", reason: "attached" });
   });
+  queuePush(info?.newWindowId);
 }
 
 function onDetached(tabId, info) {
@@ -504,9 +655,14 @@ function onDetached(tabId, info) {
     state.mru = mru.detached(state.mru, info?.oldWindowId, tabId);
     await reduce(state, { type: "external", reason: "detached" });
   });
+  queuePush(info?.oldWindowId);
 }
 
 function onWindowRemoved(windowId) {
+  lastPushed.delete(windowId);
+  clearTimeout(holdTimers.get(windowId));
+  holdTimers.delete(windowId);
+  if (focusedWindowId === windowId) focusedWindowId = null;
   job(async (state) => {
     state.mru = mru.windowRemoved(state.mru, windowId);
     if (state.session && state.session.windowId === windowId) {
@@ -519,8 +675,13 @@ function onFocusChanged(windowId) {
   job((state) => reduce(state, { type: "focusChanged", windowId }));
   // Coming back to Safari, often straight from the Tab Switcher app: pick up new settings.
   if (windowId !== api.windows.WINDOW_ID_NONE && windowId !== -1) {
+    // The window that was focused is not any more: its last push must not count as "same".
+    const was = lastPushed.get(focusedWindowId);
+    if (was && focusedWindowId !== windowId) was.snap = { ...was.snap, focused: false };
+    focusedWindowId = isId(windowId) ? windowId : focusedWindowId;
     syncFromApp();
     connectApp();
+    queuePush(windowId);
   }
 }
 
@@ -556,6 +717,7 @@ function syncFromApp() {
 
 function onStartupOrInstalled() {
   job((state) => seedInto(state));
+  queuePushAll();
   syncFromApp();
   removeSpikeData();
   healOpenTabs({ force: true });
@@ -578,6 +740,13 @@ function onStorageChanged(changes, areaName) {
   // Turning previews off deletes the stored pictures (the options page promises this).
   if (areaName !== "local" || !changes?.settings) return;
   const next = changes.settings.newValue;
+  // Panel turned off: the app forgets its snapshots, so forget what was pushed. Anything
+  // else (turned on, maxItems, previews): push again.
+  if (next?.panel === false) {
+    lastPushed.clear();
+  } else {
+    queuePushAll();
+  }
   if (next && typeof next === "object" && next.previews === false) {
     shots.clearAll().catch((e) => console.warn("[Tab Switcher] clearing previews failed", e));
   }
@@ -695,6 +864,7 @@ api.storage.onChanged?.addListener(onStorageChanged);
 // port the app's key presses arrive on.
 syncFromApp();
 connectApp();
+queuePushAll();
 healOpenTabs();
 Promise.resolve()
   .then(() => api.permissions?.contains?.({ origins: ["<all_urls>"] }))

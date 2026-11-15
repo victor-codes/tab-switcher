@@ -69,7 +69,7 @@ function fakeBrowser({ tabs, content = {}, sessionData = {}, localData = {}, app
       onStartup: event(),
       onInstalled: event(),
       onMessage: event(),
-      ...(app ? { sendNativeMessage: async (_id, msg) => (msg?.type === "log" ? { ok: true } : (app.calls.push(msg), app.reply())) } : {}),
+      ...(app ? { sendNativeMessage: async (_id, msg) => (msg?.type === "log" ? ((app.logs ??= []).push(msg), { ok: true }) : msg?.type === "snapshot:push" ? ((app.pushes ??= []).push(msg.snapshot), { delivered: true }) : (app.calls.push(msg), app.reply())) } : {}),
       connectNative(id) {
         b._ports.push(id);
         return b._helper;
@@ -677,4 +677,126 @@ test("on load, open pages without a live switcher get one; live and empty pages 
   again.runtime.onInstalled.fire({});
   await two.settle();
   assert.deepEqual(again._injected.map((x) => x.tabId).sort(), [1, 2]);
+});
+
+// ---------------------------------------------------------------------------
+// Snapshots for the app's panel
+
+function panelApp() {
+  const app = { calls: [], pushes: [], logs: [], settings: null, clearToken: null };
+  app.reply = () => ({ settings: app.settings, clearToken: app.clearToken });
+  return app;
+}
+
+test("snapshot: pushed at start with the MRU window list, one log line per push", async () => {
+  const app = panelApp();
+  const b = fakeBrowser({ tabs: threeTabs(), app });
+  const { settle } = await boot(b);
+  await settle();
+  assert.equal(app.pushes.length, 1);
+  const s = app.pushes[0];
+  assert.equal(s.windowId, 1);
+  assert.equal(s.focused, true);
+  assert.equal(s.items[0].tabId, 1);
+  assert.equal(s.items.length, 3);
+  const logs = app.logs.filter((l) => l.what === "snapshot");
+  assert.equal(logs.length, 1);
+  assert.deepEqual(Object.keys(logs[0].data).sort(), ["delivered", "focused", "i", "items", "ms", "previews", "seq", "w"]);
+});
+
+test("snapshot: one push per tab switch, with the new order; an identical state is not pushed again", async () => {
+  const app = panelApp();
+  const b = fakeBrowser({ tabs: threeTabs(), app });
+  const { settle } = await boot(b);
+  await settle();
+  const before = app.pushes.length;
+  await sleep(260); // past the per-window throttle of the start push
+  await b.tabs.update(2, { active: true });
+  await settle();
+  await sleep(10);
+  await settle();
+  assert.equal(app.pushes.length, before + 1);
+  assert.deepEqual(app.pushes.at(-1).items.map((i) => i.tabId), [2, 1, 3]);
+  assert.ok(app.pushes.at(-1).seq > app.pushes[0].seq);
+  b.tabs.onActivated.fire({ tabId: 2, windowId: 1 });
+  await settle();
+  assert.equal(app.pushes.length, before + 1, "same content: nothing pushed");
+});
+
+test("snapshot: a second change inside 250 ms is held and goes out at the end of the window", async () => {
+  const app = panelApp();
+  const b = fakeBrowser({ tabs: threeTabs(), app });
+  const { settle } = await boot(b);
+  await settle();
+  const before = app.pushes.length;
+  await sleep(260);
+  await b.tabs.update(2, { active: true });
+  await settle();
+  await b.tabs.update(3, { active: true });
+  await settle();
+  assert.equal(app.pushes.length, before + 1, "the second is held");
+  await sleep(300);
+  await settle();
+  assert.equal(app.pushes.length, before + 2);
+  assert.deepEqual(app.pushes.at(-1).items.map((i) => i.tabId), [3, 2, 1]);
+});
+
+test("snapshot: panel: false pushes nothing", async () => {
+  const app = panelApp();
+  const b = fakeBrowser({ tabs: threeTabs(), app, localData: { settings: { panel: false } } });
+  const { settle } = await boot(b);
+  await settle();
+  await b.tabs.update(2, { active: true });
+  await settle();
+  await sleep(10);
+  await settle();
+  assert.equal(app.pushes.length, 0);
+});
+
+test("snapshot: a copy that sees no tabs stays silent", async () => {
+  const app = panelApp();
+  const b = fakeBrowser({ tabs: [], app });
+  const { settle } = await boot(b);
+  await settle();
+  b.tabs.onActivated.fire({ tabId: 1, windowId: 1 });
+  await settle();
+  assert.equal(app.pushes.length, 0);
+});
+
+test("snapshot: private tabs send titles but no icon or preview", async () => {
+  const app = panelApp();
+  const b = fakeBrowser({ tabs: threeTabs().map((t) => ({ ...t, incognito: true })), app });
+  const { settle } = await boot(b);
+  b.message({ type: "page:meta", icon: ICON_A }, 1);
+  await settle();
+  assert.ok(app.pushes.length >= 1);
+  const s = app.pushes.at(-1);
+  assert.equal(s.private, true);
+  assert.ok(s.items.every((i) => i.icon === null && i.preview === null));
+  assert.equal(s.items[0].title, "One");
+});
+
+test("activate: an unknown tab or the wrong window does nothing", async () => {
+  const b = fakeBrowser({ tabs: threeTabs() });
+  const { settle } = await boot(b);
+  await settle();
+  const mruBefore = JSON.stringify(b.mru());
+  b._helper.onMessage.fire({ name: "activate", userInfo: { windowId: 1, tabId: 99 } });
+  b._helper.onMessage.fire({ name: "activate", userInfo: { windowId: 5, tabId: 2 } });
+  b._helper.onMessage.fire({ name: "activate", userInfo: { windowId: "x", tabId: 2 } });
+  await settle();
+  assert.equal(b.activeId(), 1);
+  assert.equal(JSON.stringify(b.mru()), mruBefore);
+});
+
+test("activate: a known tab is activated and promoted in the MRU", async () => {
+  const b = fakeBrowser({ tabs: threeTabs() });
+  const { settle } = await boot(b);
+  await settle();
+  b._helper.onMessage.fire({ name: "activate", userInfo: { windowId: 1, tabId: 3 } });
+  await settle();
+  await sleep(10);
+  await settle();
+  assert.equal(b.activeId(), 3);
+  assert.equal(b.mru()[0], 3);
 });
