@@ -82,6 +82,12 @@ echo "==> Zipping"
 ditto -c -k --keepParent "$APP" "$ZIP"
 SHA="$(shasum -a 256 "$ZIP" | awk '{print $1}')"
 
+# The built app must not stay on disk: macOS registers it, and Safari then lists a second
+# Tab Switcher extension next to the installed one.
+LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+"$LSREGISTER" -u "$APP" >/dev/null 2>&1 || true
+rm -rf "$OUT/DerivedData" "$OUT/export" "$OUT/Tab Switcher.xcarchive"
+
 echo "==> Updating cask"
 sed -i '' -E \
   -e "s/^  version \".*\"/  version \"$VERSION\"/" \
