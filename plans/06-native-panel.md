@@ -1,10 +1,8 @@
 # 06 — Native switcher panel
 
-Status: plan only. Nothing here is built. Revised 2026-11-15 after the open-tabs fix
-(`aac505d`) and the rename to Tab Switcher (`e11c2f4`), both on `main`.
-
-Items marked **(verify)** are assumptions that only the Phase 0 spike may settle. Until
-`plans/SPIKE-PANEL.md` exists and answers them, Phase 1 must not start.
+Status: Phase 0 done (`plans/SPIKE-PANEL.md`, 2026-11-15): every question answered, verdict
+go. Phase 1 may start. Revised 2026-11-15 after the open-tabs fix (`aac505d`) and the rename
+to Tab Switcher (`e11c2f4`), both on `main`.
 
 ## Read this first (every agent)
 
@@ -84,7 +82,7 @@ rm -rf "$DD"
   `SFSafariApplication.dispatchMessage`; the background receives it in `onAppMessage`
   (today: `flip` with `{ dir }`, and `release`).
 - **Extension → app.** Today only `settings:get` and `log`, both answered by the handler.
-  There is no path yet from the handler to the running app; Phase 0 picks one.
+  There is no path yet from the handler to the running app; Phase 0 chose `CFMessagePort`.
 
 ## Goal
 
@@ -92,7 +90,7 @@ Draw the switcher in a window owned by the Tab Switcher app instead of inside th
 page, so it appears wherever Safari is in front, including places a page overlay cannot
 reach:
 
-- the Screen Time limit screen (Safari draws it over the page) **(verify)**
+- the Screen Time limit screen (Safari draws it over the page). Confirmed by the spike.
 - the Start Page, empty tabs, PDFs, error pages
 - sites the extension has no access to
 - pages that are still loading or have no keyboard focus
@@ -169,12 +167,12 @@ App side (`SnapshotStore`):
 
 - **Extension → app (snapshots):** `browser.runtime.sendNativeMessage` with
   `{ type: "snapshot:push", snapshot }` reaches `SafariWebExtensionHandler`, which forwards
-  the bytes to the app over a `CFMessagePort` named with the App Group prefix. In memory
-  only, nothing written to disk. **(verify: allowed in the sandbox for both targets; size
-  limit comfortably above ~400 KB; latency)**
-  Fallback if that fails: write the snapshot to a file in the App Group container and
-  post a Darwin notification; the app reads and deletes it.
-  Phase 0 chooses one and records it in `plans/SPIKE-PANEL.md`. Phase 1 uses that one only.
+  the bytes to the app over a `CFMessagePort` named `<App Group>.panel` (for example
+  `4V436AF4L4.tabflip.panel`). In memory only, nothing written to disk. Spike: allowed in
+  the sandbox for both targets with no entitlement change; 8 MB delivered with no limit hit;
+  400 KB reaches the app in about 6 ms. When the app is not running,
+  `CFMessagePortCreateRemote` returns nil at once: reply `{ delivered: false }` and carry on.
+  The file + Darwin notification fallback is not needed and is not built.
 - **App → extension (commands):** the existing `dispatchMessage` path, with one new
   message: `activate` with `{ windowId, tabId }`. Both backgrounds receive it; rule below.
 
@@ -203,13 +201,23 @@ first press and do not switch mid-gesture.
 - `NSPanel`, borderless, `.nonactivatingPanel`, never key or main, so Safari stays the
   active app and the claimed shortcuts keep arriving.
 - It must not bring back the Dock icon: do not change the activation policy when showing it.
-- Level above normal windows; collection behaviour `canJoinAllSpaces` +
-  `fullScreenAuxiliary` so it shows over full-screen Safari. **(verify)**
+- `isFloatingPanel = true`, `level = .popUpMenu`, collection behaviour `canJoinAllSpaces`,
+  `fullScreenAuxiliary`, `transient`, `ignoresCycle`; `hidesOnDeactivate = false`,
+  `becomesKeyOnlyIfNeeded = true`, `animationBehavior = .none`. Spike: shows over normal and
+  full-screen Safari, the Screen Time screen, the Start Page and error pages, without taking
+  focus or releasing the hot keys.
+- The hosting view overrides `acceptsFirstMouse(for:)` to return `true`, so a click on a
+  card arrives without activating the app (spike-confirmed).
 - Created once at launch and kept hidden; showing it is `orderFrontRegardless()` with
-  content already laid out. Decoded images are cached per `tabId`.
+  content already laid out. Decoded images are cached per `tabId`. Warm it once at launch
+  (show at zero alpha, then hide): the spike's first show took 26 ms to the first frame,
+  later shows 7–14 ms.
 - Centred on the focused Safari window. Its frame comes from `CGWindowListCopyWindowInfo`
-  (bounds need no permission). **(verify in the sandbox)** Fallback: centre on the screen
-  that has the mouse.
+  (`.optionOnScreenOnly`, `.excludeDesktopElements`), filtered to Safari's pid and layer 0;
+  the first window larger than 200×200 is the front one. Spike: works in the sandbox with no
+  prompt (titles are not returned, which is fine). Convert from CG's top-left coordinates
+  with `y = primaryScreenHeight - (cgY + height)`. Fallback: centre on the screen that has
+  the mouse.
 - SwiftUI view matching the in-page design. Port the numbers, do not eyeball them: copy
   `columnsFor` and `cardWidthFor` from `extension/content/switcher.js` line for line into
   Swift, and take every size, radius, gap, font size and colour from the CSS in that file.
@@ -264,7 +272,7 @@ installed to test; restore the user's normal build afterwards and clean up as ab
 If 1 fails, switch to the file transport. If 2 fails over Screen Time, stop and tell the
 user: the main reason for the feature is gone, and they decide whether to continue.
 
-After the spike, replace every **(verify)** in this file with the measured answer.
+Done: every **(verify)** in this file is replaced with the measured answer.
 
 ### Phase 1A — extension snapshots (lesser model)
 
@@ -283,8 +291,9 @@ Build:
 - Background: call them on the events listed under "Push, don't ask"; send with
   `sendNativeMessage({ type: "snapshot:push", snapshot })`; push nothing when
   `settings.panel === false`. Handle `activate` in `onAppMessage` as specified.
-- Handler: forward `snapshot:push` to the app using the transport Phase 0 chose; keep
-  `settings:get` and `log` working unchanged.
+- Handler: forward `snapshot:push` to the app over the `CFMessagePort` (see Transport; the
+  spike code on branch `spike/native-panel` shows the calls); keep `settings:get` and `log`
+  working unchanged.
 
 Done when all of these hold:
 
@@ -293,6 +302,8 @@ Done when all of these hold:
   throttle holds a second push inside 250 ms; `maxItems` is respected; `activate` for an
   unknown tab does nothing; `activate` for a known tab activates it and promotes it;
   `panel: false` pushes nothing.
+- The system log shows one snapshot push per tab switch (the spike never saw its push on
+  activation logged; see `plans/SPIKE-PANEL.md`, section 1).
 - Existing tests are unchanged except for additions.
 - The project builds (then clean up the build).
 - Final report lists what was not verified in a real Safari.
@@ -353,7 +364,7 @@ Done when all of these hold:
 
 | Risk | Mitigation |
 |---|---|
-| Sandbox blocks the message port | File + Darwin notification fallback (Phase 0 decides) |
+| Sandbox blocks the message port | Settled: the spike delivered up to 8 MB through it |
 | Empty background overwrites the real snapshot | Snapshot rules 1, 3 and 4 |
 | Snapshot stale at press time | `activate` is validated by the extension; unknown tab is ignored |
 | Panel and in-page switcher both react | App decides per gesture and sends either `activate` or `flip`, never both |
