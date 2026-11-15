@@ -1,9 +1,9 @@
 //
 //  SafariWebExtensionHandler.swift
-//  TabFlip Extension
+//  TabSwitcher Extension
 //
 //  Answers the extension's `browser.runtime.sendNativeMessage` calls. The only request is
-//  { type: "settings:get" }: it replies with what the TabFlip app saved in the shared App
+//  { type: "settings:get" }: it replies with what the Tab Switcher app saved in the shared App
 //  Group, as { settings: {...} | null, clearToken: String | null }. Read-only: the app is
 //  the only writer.
 //
@@ -46,12 +46,12 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     }
 }
 
-/// Where the app and the extension share settings. Keep in sync with TabFlip/Settings.swift.
+/// Where the app and the extension share settings. Keep in sync with TabSwitcher/Settings.swift.
 enum SharedSettings {
     static let settingsKey = "settings"
     static let clearTokenKey = "clearToken"
     static var defaults: UserDefaults? {
-        guard let group = Bundle.main.object(forInfoDictionaryKey: "TabFlipAppGroup") as? String else { return nil }
+        guard let group = Bundle.main.object(forInfoDictionaryKey: "TabSwitcherAppGroup") as? String else { return nil }
         return UserDefaults(suiteName: group)
     }
 }

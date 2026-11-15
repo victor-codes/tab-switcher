@@ -1,4 +1,4 @@
-# TabFlip QA results (Phase 2)
+# Tab Switcher QA results (Phase 2)
 
 Status: **nothing run yet.** Agents cannot drive Safari; every cell below is `not run`. Fill in the Result column with `pass`, `fail (#n)` or `n/a`, and log each failure under "Failures" with steps and severity.
 
@@ -11,9 +11,9 @@ Feature rows (from `00-overview.md`):
 - **F3** Close and return: ⌃W closes the tab and activates the previous MRU tab, not the neighbour.
 - **F4** Recognise the page: rows show title, host, icon (or letter glyph) and a preview (or the icon/glyph).
 - **F5** Multi-window: MRU per window, the shortcut acts on the focused window only.
-- **F6** Private: no network requests caused by TabFlip (check Web Inspector › Network on the page and on the extension's background), nothing stored for private windows.
+- **F6** Private: no network requests caused by Tab Switcher (check Web Inspector › Network on the page and on the extension's background), nothing stored for private windows.
 
-How to check F6 on any page: open Develop › Web Extension Background Content › TabFlip and the page's Web Inspector; the Network tabs must show no request initiated by TabFlip (the page's own icon fetch by its own content script on load is expected and goes to that page's own icon URL). Storage: in the background inspector run `await browser.storage.session.get(null)`.
+How to check F6 on any page: open Develop › Web Extension Background Content › Tab Switcher and the page's Web Inspector; the Network tabs must show no request initiated by Tab Switcher (the page's own icon fetch by its own content script on load is expected and goes to that page's own icon URL). Storage: in the background inspector run `await browser.storage.session.get(null)`.
 
 ## Phase 2 feature checks (previews, icons, Clear data)
 
@@ -47,7 +47,7 @@ Expected results per condition. "As normal" = same as the *Normal site* row.
 | F3 | ⌃W closes, previous MRU tab active (not the neighbour) | not run |
 | F4 | Title, host, icon, preview on each card | not run |
 | F5 | n/a (single window) | not run |
-| F6 | No TabFlip network requests | not run |
+| F6 | No Tab Switcher network requests | not run |
 
 ### Strict-CSP site (e.g. github.com)
 
@@ -58,7 +58,7 @@ Expected results per condition. "As normal" = same as the *Normal site* row.
 | F3 | As normal | not run |
 | F4 | Previews shown; this site's own icon may be a glyph if CSP blocks the content script's icon load | not run |
 | F5 | n/a | not run |
-| F6 | No CSP violation reports caused by TabFlip beyond a blocked own-icon load; no other requests | not run |
+| F6 | No CSP violation reports caused by Tab Switcher beyond a blocked own-icon load; no other requests | not run |
 
 ### Start Page and empty tab (fallback)
 
@@ -82,7 +82,7 @@ Expected results per condition. "As normal" = same as the *Normal site* row.
 | F5 | n/a | not run |
 | F6 | No requests | not run |
 
-### Site with extension access denied (Safari › Settings › Websites › TabFlip: Deny)
+### Site with extension access denied (Safari › Settings › Websites › Tab Switcher: Deny)
 
 | | Expected | Result |
 |---|---|---|
@@ -163,7 +163,7 @@ Expected results per condition. "As normal" = same as the *Normal site* row.
 
 | | Expected | Result |
 |---|---|---|
-| F1 | Works only if the user allowed TabFlip in private browsing; otherwise nothing happens | not run |
+| F1 | Works only if the user allowed Tab Switcher in private browsing; otherwise nothing happens | not run |
 | F2 | Same | not run |
 | F3 | Same | not run |
 | F4 | No preview and no icon stored for private tabs (glyph, no thumbnail) | not run |

@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  TabFlip
+//  Tab Switcher
 //
 //  The app's one window, and the only place to configure Tab Switcher: extension status,
 //  switcher options, switch shortcuts and stored data. Changes are saved at once
@@ -52,7 +52,7 @@ final class ExtensionStatus: ObservableObject {
 
 // MARK: - Background (login item)
 
-/// TabFlip itself stays running in the background (no icon) to claim the shortcuts while
+/// Tab Switcher itself stays running in the background (no icon) to claim the shortcuts while
 /// Safari is in front, and opens at login (SMAppService.mainApp).
 @MainActor
 final class HelperStatus: ObservableObject {
@@ -214,7 +214,7 @@ struct ContentView: View {
                 Text("Turning this off deletes saved previews.")
             }
             Picker("Tabs shown", selection: $store.settings.maxItems) {
-                ForEach(Array(TabFlipSettings.maxItemsRange), id: \.self) { n in
+                ForEach(Array(TabSwitcherSettings.maxItemsRange), id: \.self) { n in
                     Text("\(n)").tag(n)
                 }
             }

@@ -1,6 +1,6 @@
-// TabFlip core/appsync.js — settings come from the TabFlip app.
+// Tab Switcher core/appsync.js — settings come from the Tab Switcher app.
 //
-// The app is the only place to configure TabFlip. It saves its settings in a shared App
+// The app is the only place to configure Tab Switcher. It saves its settings in a shared App
 // Group; the extension's native handler (SafariWebExtensionHandler.swift) reads them and
 // answers `browser.runtime.sendNativeMessage(..., { type: "settings:get" })` with
 //   { settings: { overlay, previews, maxItems, shortcuts } | null, clearToken: string | null }.

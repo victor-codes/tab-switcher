@@ -1,4 +1,4 @@
-// TabFlip core/previews.js. Owner: Agent 4.
+// Tab Switcher core/previews.js. Owner: Agent 4.
 //
 // Thumbnail previews of tabs for the switcher overlay (F4), kept private (F6).
 //
@@ -234,7 +234,7 @@ export function createPreviews(deps) {
       await removeKeys(ev.drop.map(previewKey));
       return "ok";
     }).catch((e) => {
-      console.warn("[TabFlip] preview capture failed", tabId, e);
+      console.warn("[Tab Switcher] preview capture failed", tabId, e);
       return "error";
     });
   }
@@ -303,7 +303,7 @@ export function createPreviews(deps) {
         delete index[tabId];
         await area.set({ [INDEX_KEY]: index });
       }
-    }).catch((e) => console.warn("[TabFlip] preview remove failed", tabId, e));
+    }).catch((e) => console.warn("[Tab Switcher] preview remove failed", tabId, e));
   }
 
   /** Drop previews of tabs that no longer exist (startup). */
@@ -317,7 +317,7 @@ export function createPreviews(deps) {
       await area.set({ [INDEX_KEY]: p.index });
       return stale.length;
     }).catch((e) => {
-      console.warn("[TabFlip] preview prune failed", e);
+      console.warn("[Tab Switcher] preview prune failed", e);
       return 0;
     });
   }

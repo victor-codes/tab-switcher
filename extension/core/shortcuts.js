@@ -1,7 +1,7 @@
-// TabFlip core/shortcuts.js — the user-chosen switch shortcuts.
+// Tab Switcher core/shortcuts.js — the user-chosen switch shortcuts.
 //
 // Safari's `commands` cannot be rebound by an extension and silently drops Control-Tab
-// (SPIKE-RESULTS S2/S3). So the TabFlip app claims these shortcuts while
+// (SPIKE-RESULTS S2/S3). So the Tab Switcher app claims these shortcuts while
 // Safari is in front; the content script also matches them on the page, as a fallback
 // for when the helper isn't running.
 //

@@ -1,6 +1,6 @@
-# TabFlip — master plan
+# Tab Switcher — master plan
 
-A Safari extension for macOS that switches between tabs in most-recently-used (MRU) order with a keyboard shortcut. Working name: **TabFlip** (do not use the name, icon, copy or artwork of any existing product).
+A Safari extension for macOS that switches between tabs in most-recently-used (MRU) order with a keyboard shortcut. Working name: **Tab Switcher** (do not use the name, icon, copy or artwork of any existing product).
 
 Every agent reads this file first, then its own plan. This file is the contract; if a plan and this file disagree, this file wins. If reality disagrees with this file (an API behaves differently in Safari), stop, record it in `plans/SPIKE-RESULTS.md`, and tell the orchestrator rather than silently changing a contract.
 
@@ -45,9 +45,9 @@ tabflip/
     images/                      Agent 3
     _locales/en/messages.json    Agent 0 creates, Agent 3 may add keys
   tests/                         Agent 1 (node:test, zero dependencies)
-  TabFlip/                       Agent 3 (container app Swift sources)
-  TabFlip Extension/             Agent 0 (generated handler; nobody edits later)
-  TabFlip.xcodeproj              Agent 0; later agents do not edit the project file
+  TabSwitcher/                       Agent 3 (container app Swift sources)
+  TabSwitcher Extension/             Agent 0 (generated handler; nobody edits later)
+  TabSwitcher.xcodeproj              Agent 0; later agents do not edit the project file
   README.md                      Agent 3
 ```
 
@@ -170,6 +170,6 @@ Orchestrator gate after Phase 0: read `plans/SPIKE-RESULTS.md`, amend this file 
 - Stay inside your owned files. Need a change elsewhere? Report it; do not make it.
 - No third-party dependencies, no bundler, no network calls in shipped code.
 - Use the `browser.*` promise API. Target Safari 17+ / macOS 14+.
-- Build check before reporting done: `xcodebuild -project TabFlip.xcodeproj -scheme TabFlip -configuration Debug build` must succeed, and `node --test tests/` must pass.
+- Build check before reporting done: `xcodebuild -project TabSwitcher.xcodeproj -scheme TabSwitcher -configuration Debug build` must succeed, and `node --test tests/` must pass.
 - Agents cannot drive Safari's UI. Anything that needs a human in Safari goes into a numbered manual checklist in your final report, with expected results.
 - Report format: what was built, what was verified and how, what was not verified, deviations from this file.

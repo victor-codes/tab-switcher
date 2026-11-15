@@ -1,4 +1,4 @@
-// TabFlip content/switcher.js — single classic script, no imports. Owner: Agent 2.
+// Tab Switcher content/switcher.js — single classic script, no imports. Owner: Agent 2.
 //
 // Runs at document_start in the top frame of every page. It does three things:
 //   1. Passively tracks which modifier keys are held (never blocks a key unless
@@ -22,7 +22,7 @@
   // turned off and on, the copy already in the page goes dead (it can't reach the
   // background any more), and the background loads a fresh one. So a new copy never
   // defers to an old one: it tells every earlier copy to stop, then takes over.
-  const RETIRE = "tabflip:retire";
+  const RETIRE = "tabswitcher:retire";
   try {
     window.dispatchEvent(new Event(RETIRE));
   } catch (e) {
@@ -211,7 +211,7 @@
 
   // ---------------------------------------------------------------------------
   // Page shortcuts (⌃Tab / ⌃⇧Tab by default, or the user's own; see core/shortcuts.js,
-  // which this mirrors: a content script cannot import). Normally the TabFlip app claims
+  // which this mirrors: a content script cannot import). Normally the Tab Switcher app claims
   // them before Safari or the page sees them; when it isn’t running they are caught here,
   // on the page, and sent to the background as `switcher:key` (only while the page has
   // keyboard focus).
@@ -397,7 +397,7 @@
   function onShow(msg) {
     const hasFocus = document.hasFocus();
     const modifiers = normalizeModifiers(msg.modifiers);
-    // The TabFlip app saw the keys go down and reports their release itself. This page
+    // The Tab Switcher app saw the keys go down and reports their release itself. This page
     // may have missed the keydown (it was in a background tab, or has no focus yet), so
     // take the app's word and show the switcher regardless.
     const assumed = msg.assumeHeld === true;
@@ -445,7 +445,7 @@
   // Second way in. In a page that was open before the extension was updated or turned off
   // and on, Safari leaves this world's messaging dead in both directions, even for a copy
   // loaded afterwards. The background can still run code here, so it calls this directly.
-  globalThis.__tabflipDeliver = handle;
+  globalThis.__tabSwitcherDeliver = handle;
   browser.runtime.onMessage.addListener(onMessage);
 
   // A newer copy took over (see RETIRE above): put everything down.
@@ -454,7 +454,7 @@
     () => {
       life.abort();
       dropSession();
-      if (globalThis.__tabflipDeliver === handle) globalThis.__tabflipDeliver = undefined;
+      if (globalThis.__tabSwitcherDeliver === handle) globalThis.__tabSwitcherDeliver = undefined;
       try {
         browser.runtime.onMessage.removeListener(onMessage);
       } catch (e) {
@@ -707,7 +707,7 @@
 
   function render() {
     const s = session;
-    const h = document.createElement("tabflip-switcher");
+    const h = document.createElement("tab-switcher");
     // Inline !important beats any page rule; set via CSSOM so a CSP that
     // forbids inline style attributes does not apply.
     setImportant(h, {
@@ -929,8 +929,8 @@
   else window.addEventListener("load", sendMeta, { once: true, signal: life.signal });
 
   // Test hook: only the harness defines this, before loading the script.
-  if (typeof globalThis.__tabflipTestHook === "function") {
-    globalThis.__tabflipTestHook({
+  if (typeof globalThis.__tabSwitcherTestHook === "function") {
+    globalThis.__tabSwitcherTestHook({
       pure,
       iconToDataUrl,
       state: () => ({

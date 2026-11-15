@@ -1,12 +1,12 @@
 //
 //  Settings.swift
-//  TabFlip
+//  Tab Switcher
 //
-//  TabFlip's settings, edited in this app and read by the Safari extension and by the
+//  Tab Switcher's settings, edited in this app and read by the Safari extension and by the
 //  app's shortcut agent (ShortcutAgent.swift).
 //
 //  They are saved as JSON in a shared App Group. The extension's native handler
-//  (TabFlip Extension/SafariWebExtensionHandler.swift) returns them to the extension,
+//  (TabSwitcher Extension/SafariWebExtensionHandler.swift) returns them to the extension,
 //  which applies them when Safari next becomes active. The JSON shape and the shortcut
 //  rules match extension/core/store.js and extension/core/shortcuts.js.
 //
@@ -35,7 +35,7 @@ struct ShortcutPair: Codable, Equatable {
     static let defaults = ShortcutPair(next: .defaultNext, prev: .defaultPrev)
 }
 
-struct TabFlipSettings: Codable, Equatable {
+struct TabSwitcherSettings: Codable, Equatable {
     var overlay = true
     var previews = true
     var maxItems = 8
@@ -68,21 +68,21 @@ final class SettingsStore: ObservableObject {
     static let settingsKey = "settings"
     static let clearTokenKey = "clearToken"
 
-    @Published var settings: TabFlipSettings {
+    @Published var settings: TabSwitcherSettings {
         didSet { if settings != oldValue { save() } }
     }
 
     private let defaults: UserDefaults?
 
     init() {
-        let group = Bundle.main.object(forInfoDictionaryKey: "TabFlipAppGroup") as? String
+        let group = Bundle.main.object(forInfoDictionaryKey: "TabSwitcherAppGroup") as? String
         defaults = group.flatMap { UserDefaults(suiteName: $0) }
         if let data = defaults?.data(forKey: Self.settingsKey),
-           let saved = try? JSONDecoder().decode(TabFlipSettings.self, from: data) {
+           let saved = try? JSONDecoder().decode(TabSwitcherSettings.self, from: data) {
             settings = saved
             save() // keeps any correction made while decoding
         } else {
-            settings = TabFlipSettings()
+            settings = TabSwitcherSettings()
             save()
         }
     }

@@ -42,7 +42,7 @@ function area(shared = {}) {
   };
 }
 
-const EXT_BASE = "safari-web-extension://tabflip-uuid/";
+const EXT_BASE = "safari-web-extension://tabswitcher-uuid/";
 const ICON_A = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
 /**
@@ -57,14 +57,14 @@ function fakeBrowser({ tabs, content = {}, sessionData = {}, localData = {}, app
     _sent: [],
     _pings: [],
     _injected: [],
-    _direct: {}, // tabId -> the loaded switcher's direct entry (__tabflipDeliver)
+    _direct: {}, // tabId -> the loaded switcher's direct entry (__tabSwitcherDeliver)
     _directSent: [],
     _ports: [],
     _helper: { onMessage: event(), onDisconnect: event() },
     _content: content,
     storage: { session: area(sessionData), local: area(localData), onChanged: event() },
     runtime: {
-      id: "tabflip",
+      id: "tabswitcher",
       getURL: (p) => EXT_BASE + p,
       onStartup: event(),
       onInstalled: event(),
@@ -170,7 +170,7 @@ function fakeBrowser({ tabs, content = {}, sessionData = {}, localData = {}, app
       b._helper.onMessage.fire({ name: "release", userInfo: {} });
     },
     message(msg, fromTabId) {
-      b.runtime.onMessage.fire(msg, { id: "tabflip", tab: b.tab(fromTabId) });
+      b.runtime.onMessage.fire(msg, { id: "tabswitcher", tab: b.tab(fromTabId) });
     },
     mru(windowId = 1) {
       return sessionData.state?.mru?.windows?.[windowId] ?? [];
@@ -466,7 +466,7 @@ test("page:meta: only small data:image icons are stored (no network URLs, F6)", 
 /** Send a message as the options page; returns the listener's reply (a promise or undefined). */
 function fromOptions(b, msg, { withTab = false } = {}) {
   const url = EXT_BASE + "options/options.html";
-  const sender = withTab ? { id: "tabflip", url, tab: { id: 50, windowId: 1, url } } : { id: "tabflip", url };
+  const sender = withTab ? { id: "tabswitcher", url, tab: { id: 50, windowId: 1, url } } : { id: "tabswitcher", url };
   return b.runtime.onMessage.fire(msg, sender)[0];
 }
 
@@ -510,7 +510,7 @@ test("data:clear replies { ok: false, error } when storage fails, and is refused
   const b = fakeBrowser({ tabs: threeTabs() });
   const { settle } = await boot(b);
   await settle();
-  assert.equal(b.runtime.onMessage.fire({ type: "data:clear" }, { id: "tabflip", url: "https://one.example/a", tab: b.tab(1) })[0], undefined);
+  assert.equal(b.runtime.onMessage.fire({ type: "data:clear" }, { id: "tabswitcher", url: "https://one.example/a", tab: b.tab(1) })[0], undefined);
   const set = b.storage.session.set;
   b.storage.session.set = async () => {
     throw new Error("quota exceeded");

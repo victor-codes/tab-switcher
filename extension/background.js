@@ -1,4 +1,4 @@
-// TabFlip background entry (wiring only). Owner: Agent 1.
+// Tab Switcher background entry (wiring only). Owner: Agent 1.
 //
 // A module service worker that Safari stops ~29 s after its last event. Therefore:
 // - every listener is registered synchronously at top level (below);
@@ -105,7 +105,7 @@ async function seedInto(state) {
     const tabs = await api.tabs.query({});
     state.mru = mru.seed(state.mru, tabs);
   } catch (e) {
-    console.warn("[TabFlip] seeding failed", e);
+    console.warn("[Tab Switcher] seeding failed", e);
   }
 }
 
@@ -185,7 +185,7 @@ function summarize(res) {
 
 /**
  * Hand a message to the page's switcher by running a call in the page, for pages whose
- * messaging is dead (see content/switcher.js, __tabflipDeliver). Resolves with the page's
+ * messaging is dead (see content/switcher.js, __tabSwitcherDeliver). Resolves with the page's
  * reply, null when the page has no switcher loaded, undefined when no code may run there.
  */
 async function execDeliver(tabId, msg, ms = INJECT_BUDGET_MS) {
@@ -198,7 +198,7 @@ async function execDeliver(tabId, msg, ms = INJECT_BUDGET_MS) {
     .then(() =>
       api.scripting.executeScript({
         target: { tabId },
-        func: (m) => (typeof globalThis.__tabflipDeliver === "function" ? globalThis.__tabflipDeliver(m) ?? null : null),
+        func: (m) => (typeof globalThis.__tabSwitcherDeliver === "function" ? globalThis.__tabSwitcherDeliver(m) ?? null : null),
         args: [msg],
       })
     )
@@ -269,7 +269,7 @@ async function healOpenTabs({ force = false } = {}) {
     );
     diag("heal", count);
   } catch (e) {
-    console.warn("[TabFlip] checking open pages failed", e);
+    console.warn("[Tab Switcher] checking open pages failed", e);
   }
 }
 
@@ -338,14 +338,14 @@ async function perform(state, eff, ctx) {
       try {
         await api.tabs.update(eff.tabId, { active: true });
       } catch (e) {
-        console.warn("[TabFlip] activate failed", eff.tabId, e);
+        console.warn("[Tab Switcher] activate failed", eff.tabId, e);
       }
       return null;
     case "remove":
       try {
         await api.tabs.remove(eff.tabId);
       } catch (e) {
-        console.warn("[TabFlip] remove failed", eff.tabId, e);
+        console.warn("[Tab Switcher] remove failed", eff.tabId, e);
       }
       return null;
     case "startIdleTimer":
@@ -381,14 +381,14 @@ async function syncWindow(state, windowId) {
   try {
     tabs = await api.tabs.query({ windowId });
   } catch (e) {
-    console.warn("[TabFlip] tabs.query failed", e);
+    console.warn("[Tab Switcher] tabs.query failed", e);
   }
   if (tabs.length) state.mru = mru.syncWindow(state.mru, windowId, tabs);
   return new Map(tabs.map((t) => [t.id, t]));
 }
 
 /**
- * A switch shortcut: from the TabFlip app (senderTab null: the active tab of the focused
+ * A switch shortcut: from the Tab Switcher app (senderTab null: the active tab of the focused
  * window), or matched by the content script on the page when the helper isn't running.
  * dir 1 = to older tabs, -1 = back. The keys to hold come from the stored shortcuts,
  * never from the page.
@@ -409,9 +409,9 @@ function onPageShortcut(senderTab, dir) {
 }
 
 // ---------------------------------------------------------------------------
-// Shortcuts from the TabFlip app
+// Shortcuts from the Tab Switcher app
 //
-// Safari won't give an extension ⌃Tab, so the TabFlip app (running in the background) claims
+// Safari won't give an extension ⌃Tab, so the Tab Switcher app (running in the background) claims
 // the user's shortcuts while Safari is in front and sends each press here through the
 // app: SFSafariApplication.dispatchMessage arrives on a port opened with connectNative.
 //   { name: "flip", userInfo: { dir: 1 | -1 } }   a shortcut was pressed
@@ -439,7 +439,7 @@ function connectApp() {
     });
     appPort = port;
   } catch (e) {
-    console.warn("[TabFlip] could not connect to the app", e);
+    console.warn("[Tab Switcher] could not connect to the app", e);
   }
 }
 
@@ -517,7 +517,7 @@ function onWindowRemoved(windowId) {
 
 function onFocusChanged(windowId) {
   job((state) => reduce(state, { type: "focusChanged", windowId }));
-  // Coming back to Safari, often straight from the TabFlip app: pick up new settings.
+  // Coming back to Safari, often straight from the Tab Switcher app: pick up new settings.
   if (windowId !== api.windows.WINDOW_ID_NONE && windowId !== -1) {
     syncFromApp();
     connectApp();
@@ -525,7 +525,7 @@ function onFocusChanged(windowId) {
 }
 
 // ---------------------------------------------------------------------------
-// Settings from the TabFlip app (core/appsync.js)
+// Settings from the Tab Switcher app (core/appsync.js)
 
 /** Don't ask the app more than once a second (focus changes come in bursts). */
 const SYNC_GAP_MS = 1000;
@@ -551,7 +551,7 @@ function syncFromApp() {
         if (result.ok) await api.storage.local.set({ [CLEAR_TOKEN_KEY]: plan.clearToken });
       }
     })
-    .catch((e) => console.warn("[TabFlip] settings sync skipped", e));
+    .catch((e) => console.warn("[Tab Switcher] settings sync skipped", e));
 }
 
 function onStartupOrInstalled() {
@@ -562,7 +562,7 @@ function onStartupOrInstalled() {
   Promise.resolve()
     .then(() => api.tabs.query({}))
     .then((tabs) => shots.prune(tabs.map((t) => t.id)))
-    .catch((e) => console.warn("[TabFlip] preview prune skipped", e));
+    .catch((e) => console.warn("[Tab Switcher] preview prune skipped", e));
 }
 
 /** One-off cleanup of what the Phase 0 spike probe stored. */
@@ -579,7 +579,7 @@ function onStorageChanged(changes, areaName) {
   if (areaName !== "local" || !changes?.settings) return;
   const next = changes.settings.newValue;
   if (next && typeof next === "object" && next.previews === false) {
-    shots.clearAll().catch((e) => console.warn("[TabFlip] clearing previews failed", e));
+    shots.clearAll().catch((e) => console.warn("[Tab Switcher] clearing previews failed", e));
   }
 }
 

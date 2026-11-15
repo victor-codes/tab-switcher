@@ -4,7 +4,7 @@
 // Draws the Tab Switcher mark (a stack of tab cards, the front one system blue, on a
 // pale body) with CoreGraphics and writes every PNG both targets need:
 //   extension/images/icon-{48,96,128,256,512}.png
-//   TabFlip/Assets.xcassets/AppIcon.appiconset/mac-icon-*.png
+//   TabSwitcher/Assets.xcassets/AppIcon.appiconset/mac-icon-*.png
 //
 // Usage (from the repository root):  swift tools/make-icons.swift
 // No dependencies beyond the macOS SDK.
@@ -97,7 +97,7 @@ for px in [48, 96, 128, 256, 512] {
 }
 
 // App icon: macOS grid (824 pt body on a 1024 pt canvas => ~10% margin).
-let appIconDir = root.appendingPathComponent("TabFlip/Assets.xcassets/AppIcon.appiconset")
+let appIconDir = root.appendingPathComponent("TabSwitcher/Assets.xcassets/AppIcon.appiconset")
 for pt in [16, 32, 128, 256, 512] {
     for scale in [1, 2] {
         writePNG(drawIcon(size: pt * scale, margin: 0.1),

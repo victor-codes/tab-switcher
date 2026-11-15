@@ -1,9 +1,9 @@
 //
 //  ShortcutAgent.swift
-//  TabFlip
+//  Tab Switcher
 //
 //  Safari doesn't let an extension take ⌃Tab, and a web page only sees it while it has
-//  focus. So while TabFlip runs (in the background, as a login item: TabFlipApp.swift),
+//  focus. So while Tab Switcher runs (in the background, as a login item: TabSwitcherApp.swift),
 //  it claims the user's two shortcuts system-wide, but only while Safari is the frontmost
 //  app, and passes each press to the extension:
 //
@@ -53,10 +53,10 @@ final class ShortcutAgent: NSObject {
     }
 
     private func loadShortcuts() -> ShortcutPair {
-        let group = Bundle.main.object(forInfoDictionaryKey: "TabFlipAppGroup") as? String
+        let group = Bundle.main.object(forInfoDictionaryKey: "TabSwitcherAppGroup") as? String
         guard let defaults = group.flatMap({ UserDefaults(suiteName: $0) }),
               let data = defaults.data(forKey: SettingsStore.settingsKey),
-              let settings = try? JSONDecoder().decode(TabFlipSettings.self, from: data)
+              let settings = try? JSONDecoder().decode(TabSwitcherSettings.self, from: data)
         else { return .defaults }
         return settings.shortcuts
     }

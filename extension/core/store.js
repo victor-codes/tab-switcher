@@ -1,4 +1,4 @@
-// TabFlip core/store.js. Owner: Agent 1.
+// Tab Switcher core/store.js. Owner: Agent 1.
 //
 // Write-through persistence for the non-persistent background, plus a serial queue so
 // events are handled one at a time in arrival order.
@@ -55,7 +55,7 @@ export function createStore(area, localArea) {
       try {
         got = (await area.get(STATE_KEY)) || {};
       } catch (e) {
-        console.warn("[TabFlip] state load failed", e);
+        console.warn("[Tab Switcher] state load failed", e);
       }
       const raw = got[STATE_KEY];
       return { state: normalizeState(raw), fresh: raw === undefined || raw === null };
@@ -64,7 +64,7 @@ export function createStore(area, localArea) {
       try {
         await area.set({ [STATE_KEY]: state });
       } catch (e) {
-        console.warn("[TabFlip] state save failed", e);
+        console.warn("[Tab Switcher] state save failed", e);
       }
     },
     async loadSettings() {
@@ -90,7 +90,7 @@ export function createQueue() {
   return {
     enqueue(fn) {
       const run = tail.then(() => fn()).catch((e) => {
-        console.error("[TabFlip] event handler failed", e);
+        console.error("[Tab Switcher] event handler failed", e);
         return undefined;
       });
       tail = run;

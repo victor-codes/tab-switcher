@@ -15,16 +15,16 @@ Read `00-overview.md` first. Goal: a building Xcode project with the final manif
      `icons`: 48/96/128/256/512 pointing into `images/`.
    - Stub files for every referenced path and for `core/mru.js`, `core/session.js`, `core/store.js`, `core/previews.js` (each exporting nothing yet, with a one-line header naming its owner agent). Placeholder solid-colour PNG icons are fine.
 3. Generate the project **referencing** `extension/` (do not copy resources, so `extension/` stays the single source of truth):
-   `xcrun safari-web-extension-converter extension --project-location . --app-name TabFlip --bundle-identifier com.example.tabflip --swift --macos-only --no-open --no-prompt`
-   Check `--help` first; flag names vary by Xcode version. If the tool nests the project in a `TabFlip/` subfolder, move things so the layout matches the overview, and confirm the project still builds.
-4. Build: `xcodebuild -project TabFlip.xcodeproj -scheme TabFlip -configuration Debug build`. Fix until green. Signing: "Sign to Run Locally", no team.
+   `xcrun safari-web-extension-converter extension --project-location . --app-name Tab Switcher --bundle-identifier com.example.tabflip --swift --macos-only --no-open --no-prompt`
+   Check `--help` first; flag names vary by Xcode version. If the tool nests the project in a `TabSwitcher/` subfolder, move things so the layout matches the overview, and confirm the project still builds.
+4. Build: `xcodebuild -project TabSwitcher.xcodeproj -scheme TabSwitcher -configuration Debug build`. Fix until green. Signing: "Sign to Run Locally", no team.
 5. Commit.
 
 ## Part B — spike
 
 Put temporary probe code in `background.js` and `content/switcher.js` (log to the console and to `storage.local` under `spike`, so results can be read from the options page stub). Then hand the user this checklist and wait for their answers — you cannot operate Safari yourself:
 
-1. Run the built `TabFlip.app` once. Safari → Settings → Developer → enable "Allow unsigned extensions" (requires the Develop menu to be on). Settings → Extensions → enable TabFlip and allow it on all websites.
+1. Run the built `Tab Switcher.app` once. Safari → Settings → Developer → enable "Allow unsigned extensions" (requires the Develop menu to be on). Settings → Extensions → enable Tab Switcher and allow it on all websites.
 2. Open three ordinary sites in one window, then follow the on-page probe instructions and read back what the options page shows.
 
 Questions to answer, each with evidence:

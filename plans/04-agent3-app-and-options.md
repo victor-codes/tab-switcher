@@ -1,6 +1,6 @@
 # Agent 3 — container app, options page, icons, README (Phase 1)
 
-Read `00-overview.md` and `SPIKE-RESULTS.md` first. You own `TabFlip/` (Swift sources and assets of the app target), `extension/options/`, `extension/images/`, `README.md`, and may add keys to `extension/_locales/en/messages.json`. Do not edit `TabFlip.xcodeproj` by hand or the generated extension handler; if a new Swift file must be added to the target and the project does not use synchronized folders, say so in your report.
+Read `00-overview.md` and `SPIKE-RESULTS.md` first. You own `TabSwitcher/` (Swift sources and assets of the app target), `extension/options/`, `extension/images/`, `README.md`, and may add keys to `extension/_locales/en/messages.json`. Do not edit `TabSwitcher.xcodeproj` by hand or the generated extension handler; if a new Swift file must be added to the target and the project does not use synchronized folders, say so in your report.
 
 ## Container app (SwiftUI, single window)
 

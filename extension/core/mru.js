@@ -1,4 +1,4 @@
-// TabFlip core/mru.js. Owner: Agent 1.
+// Tab Switcher core/mru.js. Owner: Agent 1.
 //
 // Per-window most-recently-used tab order. Pure: no browser API, no mutation.
 // State: { windows: { [windowId]: number[] /* tabIds, most recent first */ } }

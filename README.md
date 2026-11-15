@@ -43,14 +43,14 @@ Then follow [Setting it up](#setting-it-up).
 
 ## Build and run
 
-1. Open `TabFlip.xcodeproj` in Xcode 15 or later, or build from the command line:
+1. Open `TabSwitcher.xcodeproj` in Xcode 15 or later, or build from the command line:
 
    ```sh
-   xcodebuild -project TabFlip.xcodeproj -scheme TabFlip -configuration Debug build
+   xcodebuild -project TabSwitcher.xcodeproj -scheme TabSwitcher -configuration Debug build
    ```
 
    The project is signed with a free Apple ID "Personal Team" (`DEVELOPMENT_TEAM` in the project). A team is required: the app and the extension share settings through an App Group (`$(TeamIdentifierPrefix)tabflip`), and Xcode will not build App Group entitlements without one. To use your own team, change the team in Signing & Capabilities for both targets. Shipping to other people (App Store or notarized download) needs a paid Apple Developer Program membership.
-2. Run the **TabFlip** scheme from Xcode, or open the built `Tab Switcher.app` (Xcode shows its location under Product › Show Build Folder in Finder). The app is where Tab Switcher is set up and configured.
+2. Run the **TabSwitcher** scheme from Xcode, or open the built `Tab Switcher.app` (Xcode shows its location under Product › Show Build Folder in Finder). The app is where Tab Switcher is set up and configured.
 
 ### Allowing an unsigned extension (local development)
 
@@ -77,13 +77,13 @@ When you're done, close the window. Tab Switcher keeps running so the shortcuts 
 
 **⌃Tab and ⌃⇧Tab can be changed** in the Tab Switcher app, under Keyboard Shortcuts: click a shortcut and press the new keys. Each needs Control, Option or Command, and both need to share the modifier you hold while browsing.
 
-How they work: Safari does not let an extension take Control-Tab, and a web page only sees keys while it has focus. So the Tab Switcher app (`TabFlip/ShortcutAgent.swift`) claims the two shortcuts with the system hot key API (`RegisterEventHotKey`), only while Safari is the frontmost app; in every other app ⌃Tab works as usual. Each press goes to the extension with `SFSafariApplication.dispatchMessage`, which the background receives on a port opened with `browser.runtime.connectNative`. It also watches for the held modifier being let go, so the switcher commits even when the page doesn't have focus. This needs no Accessibility permission and works in the App Sandbox. It has to be the app itself: Safari refuses these messages from any other process, including a helper app embedded in it.
+How they work: Safari does not let an extension take Control-Tab, and a web page only sees keys while it has focus. So the Tab Switcher app (`TabSwitcher/ShortcutAgent.swift`) claims the two shortcuts with the system hot key API (`RegisterEventHotKey`), only while Safari is the frontmost app; in every other app ⌃Tab works as usual. Each press goes to the extension with `SFSafariApplication.dispatchMessage`, which the background receives on a port opened with `browser.runtime.connectNative`. It also watches for the held modifier being let go, so the switcher commits even when the page doesn't have focus. This needs no Accessibility permission and works in the App Sandbox. It has to be the app itself: Safari refuses these messages from any other process, including a helper app embedded in it.
 
 If Tab Switcher isn't running, the content script still catches the shortcuts while a page has keyboard focus.
 
 ## Settings
 
-All settings are in the Tab Switcher app; the extension has no settings page of its own. The app saves each change at once to a shared App Group. The extension's native handler (`TabFlip Extension/SafariWebExtensionHandler.swift`) returns them to the extension (`extension/core/appsync.js`), which applies them whenever its background starts or a Safari window becomes active, so a change shows up as soon as you switch back to Safari.
+All settings are in the Tab Switcher app; the extension has no settings page of its own. The app saves each change at once to a shared App Group. The extension's native handler (`TabSwitcher Extension/SafariWebExtensionHandler.swift`) returns them to the extension (`extension/core/appsync.js`), which applies them whenever its background starts or a Safari window becomes active, so a change shows up as soon as you switch back to Safari.
 
 - **Show the switcher** (on by default). When off, each tap switches straight away without drawing anything.
 - **Show page previews** (on by default). When off, Tab Switcher stops taking previews and deletes the ones it stored.
@@ -116,8 +116,8 @@ Nothing leaves your Mac. Tab Switcher makes no network requests and has no analy
 
 ```
 extension/          Web extension (manifest, background, content script, icons)
-TabFlip/            The app: setup and all settings (SwiftUI)
-TabFlip Extension/  Safari web extension target (handler that serves the app's settings)
+TabSwitcher/            The app: setup and all settings (SwiftUI)
+TabSwitcher Extension/  Safari web extension target (handler that serves the app's settings)
 tests/              node:test unit tests  (run: node --test tests/)
 tools/              Developer tools, not shipped (make-icons.swift regenerates all icons)
 ```

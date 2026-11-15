@@ -9,10 +9,10 @@
 /* Begin PBXBuildFile section */
 		5A99CD59EABA4B9BBDA74F28 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C2FDB1D81328B874DF3CE /* Settings.swift */; };
 		94C8C5726315273079463CB3 /* ShortcutAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ADFA39362849F90E241825C /* ShortcutAgent.swift */; };
-		A66738C430A6FD0C0098F1B9 /* TabFlipApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66738C330A6FD0C0098F1B9 /* TabFlipApp.swift */; };
+		A66738C430A6FD0C0098F1B9 /* TabSwitcherApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66738C330A6FD0C0098F1B9 /* TabSwitcherApp.swift */; };
 		A66738D030A6FD0D0098F1B9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66738CF30A6FD0D0098F1B9 /* ContentView.swift */; };
 		A66738D530A6FD0E0098F1B9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A66738D430A6FD0E0098F1B9 /* Assets.xcassets */; };
-		A66738DC30A6FD0E0098F1B9 /* TabFlip Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A66738DB30A6FD0E0098F1B9 /* TabFlip Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A66738DC30A6FD0E0098F1B9 /* TabSwitcher Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A66738DB30A6FD0E0098F1B9 /* TabSwitcher Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A66738E130A6FD0E0098F1B9 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66738E030A6FD0E0098F1B9 /* SafariWebExtensionHandler.swift */; };
 		A66738F530A6FD0E0098F1B9 /* core in Resources */ = {isa = PBXBuildFile; fileRef = A66738EE30A6FD0E0098F1B9 /* core */; };
 		A66738F630A6FD0E0098F1B9 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = A66738EF30A6FD0E0098F1B9 /* background.js */; };
@@ -30,7 +30,7 @@
 			containerPortal = A66738B830A6FD0C0098F1B9 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = A66738DA30A6FD0E0098F1B9;
-			remoteInfo = "TabFlip Extension";
+			remoteInfo = "TabSwitcher Extension";
 		};
 /* End PBXContainerItemProxy section */
 
@@ -41,7 +41,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				A66738DC30A6FD0E0098F1B9 /* TabFlip Extension.appex in Embed Foundation Extensions */,
+				A66738DC30A6FD0E0098F1B9 /* TabSwitcher Extension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -53,11 +53,11 @@
 		8ADFA39362849F90E241825C /* ShortcutAgent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShortcutAgent.swift; sourceTree = "<group>"; };
 		A2E54C36BD1E07C14D6E3699 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		A66738C030A6FD0C0098F1B9 /* Tab Switcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Tab Switcher.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		A66738C330A6FD0C0098F1B9 /* TabFlipApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabFlipApp.swift; sourceTree = "<group>"; };
+		A66738C330A6FD0C0098F1B9 /* TabSwitcherApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherApp.swift; sourceTree = "<group>"; };
 		A66738CF30A6FD0D0098F1B9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A66738D430A6FD0E0098F1B9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A66738D630A6FD0E0098F1B9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A66738DB30A6FD0E0098F1B9 /* TabFlip Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "TabFlip Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A66738DB30A6FD0E0098F1B9 /* TabSwitcher Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "TabSwitcher Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A66738E030A6FD0E0098F1B9 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
 		A66738E230A6FD0E0098F1B9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A66738EE30A6FD0E0098F1B9 /* core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = core; path = ../extension/core; sourceTree = "<group>"; };
@@ -89,8 +89,8 @@
 		A66738B730A6FD0C0098F1B9 = {
 			isa = PBXGroup;
 			children = (
-				A66738C230A6FD0C0098F1B9 /* TabFlip */,
-				A66738DF30A6FD0E0098F1B9 /* TabFlip Extension */,
+				A66738C230A6FD0C0098F1B9 /* TabSwitcher */,
+				A66738DF30A6FD0E0098F1B9 /* TabSwitcher Extension */,
 				A66738C130A6FD0C0098F1B9 /* Products */,
 				FB1B4946E7AB2F626D2B062A /* Frameworks */,
 			);
@@ -100,32 +100,32 @@
 			isa = PBXGroup;
 			children = (
 				A66738C030A6FD0C0098F1B9 /* Tab Switcher.app */,
-				A66738DB30A6FD0E0098F1B9 /* TabFlip Extension.appex */,
+				A66738DB30A6FD0E0098F1B9 /* TabSwitcher Extension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		A66738C230A6FD0C0098F1B9 /* TabFlip */ = {
+		A66738C230A6FD0C0098F1B9 /* TabSwitcher */ = {
 			isa = PBXGroup;
 			children = (
-				A66738C330A6FD0C0098F1B9 /* TabFlipApp.swift */,
+				A66738C330A6FD0C0098F1B9 /* TabSwitcherApp.swift */,
 				A66738CF30A6FD0D0098F1B9 /* ContentView.swift */,
 				134C2FDB1D81328B874DF3CE /* Settings.swift */,
 				A66738D430A6FD0E0098F1B9 /* Assets.xcassets */,
 				A66738D630A6FD0E0098F1B9 /* Info.plist */,
 				8ADFA39362849F90E241825C /* ShortcutAgent.swift */,
 			);
-			path = TabFlip;
+			path = TabSwitcher;
 			sourceTree = "<group>";
 		};
-		A66738DF30A6FD0E0098F1B9 /* TabFlip Extension */ = {
+		A66738DF30A6FD0E0098F1B9 /* TabSwitcher Extension */ = {
 			isa = PBXGroup;
 			children = (
 				A66738EC30A6FD0E0098F1B9 /* Resources */,
 				A66738E030A6FD0E0098F1B9 /* SafariWebExtensionHandler.swift */,
 				A66738E230A6FD0E0098F1B9 /* Info.plist */,
 			);
-			path = "TabFlip Extension";
+			path = "TabSwitcher Extension";
 			sourceTree = "<group>";
 		};
 		A66738EC30A6FD0E0098F1B9 /* Resources */ = {
@@ -139,7 +139,7 @@
 				A66738F330A6FD0E0098F1B9 /* _locales */,
 			);
 			name = Resources;
-			path = "TabFlip Extension";
+			path = "TabSwitcher Extension";
 			sourceTree = SOURCE_ROOT;
 		};
 		B6480EC1EC77730EBDF92558 /* OS X */ = {
@@ -161,9 +161,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A66738BF30A6FD0C0098F1B9 /* TabFlip */ = {
+		A66738BF30A6FD0C0098F1B9 /* TabSwitcher */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A66738E930A6FD0E0098F1B9 /* Build configuration list for PBXNativeTarget "TabFlip" */;
+			buildConfigurationList = A66738E930A6FD0E0098F1B9 /* Build configuration list for PBXNativeTarget "TabSwitcher" */;
 			buildPhases = (
 				A66738BC30A6FD0C0098F1B9 /* Sources */,
 				A66738BD30A6FD0C0098F1B9 /* Frameworks */,
@@ -175,14 +175,14 @@
 			dependencies = (
 				A66738DE30A6FD0E0098F1B9 /* PBXTargetDependency */,
 			);
-			name = TabFlip;
-			productName = TabFlip;
+			name = TabSwitcher;
+			productName = TabSwitcher;
 			productReference = A66738C030A6FD0C0098F1B9 /* Tab Switcher.app */;
 			productType = "com.apple.product-type.application";
 		};
-		A66738DA30A6FD0E0098F1B9 /* TabFlip Extension */ = {
+		A66738DA30A6FD0E0098F1B9 /* TabSwitcher Extension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A66738E530A6FD0E0098F1B9 /* Build configuration list for PBXNativeTarget "TabFlip Extension" */;
+			buildConfigurationList = A66738E530A6FD0E0098F1B9 /* Build configuration list for PBXNativeTarget "TabSwitcher Extension" */;
 			buildPhases = (
 				A66738D730A6FD0E0098F1B9 /* Sources */,
 				A66738D830A6FD0E0098F1B9 /* Frameworks */,
@@ -192,9 +192,9 @@
 			);
 			dependencies = (
 			);
-			name = "TabFlip Extension";
-			productName = "TabFlip Extension";
-			productReference = A66738DB30A6FD0E0098F1B9 /* TabFlip Extension.appex */;
+			name = "TabSwitcher Extension";
+			productName = "TabSwitcher Extension";
+			productReference = A66738DB30A6FD0E0098F1B9 /* TabSwitcher Extension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -215,7 +215,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A66738BB30A6FD0C0098F1B9 /* Build configuration list for PBXProject "TabFlip" */;
+			buildConfigurationList = A66738BB30A6FD0C0098F1B9 /* Build configuration list for PBXProject "TabSwitcher" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -229,8 +229,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A66738BF30A6FD0C0098F1B9 /* TabFlip */,
-				A66738DA30A6FD0E0098F1B9 /* TabFlip Extension */,
+				A66738BF30A6FD0C0098F1B9 /* TabSwitcher */,
+				A66738DA30A6FD0E0098F1B9 /* TabSwitcher Extension */,
 			);
 		};
 /* End PBXProject section */
@@ -266,7 +266,7 @@
 			files = (
 				A66738D030A6FD0D0098F1B9 /* ContentView.swift in Sources */,
 				5A99CD59EABA4B9BBDA74F28 /* Settings.swift in Sources */,
-				A66738C430A6FD0C0098F1B9 /* TabFlipApp.swift in Sources */,
+				A66738C430A6FD0C0098F1B9 /* TabSwitcherApp.swift in Sources */,
 				94C8C5726315273079463CB3 /* ShortcutAgent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -284,7 +284,7 @@
 /* Begin PBXTargetDependency section */
 		A66738DE30A6FD0E0098F1B9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = A66738DA30A6FD0E0098F1B9 /* TabFlip Extension */;
+			target = A66738DA30A6FD0E0098F1B9 /* TabSwitcher Extension */;
 			targetProxy = A66738DD30A6FD0E0098F1B9 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -411,7 +411,7 @@
 		A66738E630A6FD0E0098F1B9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = "TabFlip Extension/TabFlip Extension.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "TabSwitcher Extension/TabSwitcher Extension.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -420,7 +420,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "TabFlip Extension/Info.plist";
+				INFOPLIST_FILE = "TabSwitcher Extension/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Tab Switcher Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -435,7 +435,7 @@
 					SafariServices,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.tabflip.Extension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Tab Switcher Extension";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -448,7 +448,7 @@
 		A66738E730A6FD0E0098F1B9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = "TabFlip Extension/TabFlip Extension.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "TabSwitcher Extension/TabSwitcher Extension.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -457,7 +457,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "TabFlip Extension/Info.plist";
+				INFOPLIST_FILE = "TabSwitcher Extension/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Tab Switcher Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -472,7 +472,7 @@
 					SafariServices,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.tabflip.Extension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Tab Switcher Extension";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -486,7 +486,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = TabFlip/TabFlip.entitlements;
+				CODE_SIGN_ENTITLEMENTS = TabSwitcher/TabSwitcher.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -497,7 +497,7 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = TabFlip/Info.plist;
+				INFOPLIST_FILE = TabSwitcher/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Tab Switcher";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
@@ -513,7 +513,7 @@
 					Carbon,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.tabflip;
-				PRODUCT_MODULE_NAME = TabFlip;
+				PRODUCT_MODULE_NAME = TabSwitcher;
 				PRODUCT_NAME = "Tab Switcher";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -529,7 +529,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = TabFlip/TabFlip.entitlements;
+				CODE_SIGN_ENTITLEMENTS = TabSwitcher/TabSwitcher.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -540,7 +540,7 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = TabFlip/Info.plist;
+				INFOPLIST_FILE = TabSwitcher/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Tab Switcher";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
@@ -556,7 +556,7 @@
 					Carbon,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.tabflip;
-				PRODUCT_MODULE_NAME = TabFlip;
+				PRODUCT_MODULE_NAME = TabSwitcher;
 				PRODUCT_NAME = "Tab Switcher";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -571,7 +571,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A66738BB30A6FD0C0098F1B9 /* Build configuration list for PBXProject "TabFlip" */ = {
+		A66738BB30A6FD0C0098F1B9 /* Build configuration list for PBXProject "TabSwitcher" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A66738E330A6FD0E0098F1B9 /* Debug */,
@@ -580,7 +580,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A66738E530A6FD0E0098F1B9 /* Build configuration list for PBXNativeTarget "TabFlip Extension" */ = {
+		A66738E530A6FD0E0098F1B9 /* Build configuration list for PBXNativeTarget "TabSwitcher Extension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A66738E630A6FD0E0098F1B9 /* Debug */,
@@ -589,7 +589,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A66738E930A6FD0E0098F1B9 /* Build configuration list for PBXNativeTarget "TabFlip" */ = {
+		A66738E930A6FD0E0098F1B9 /* Build configuration list for PBXNativeTarget "TabSwitcher" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A66738EA30A6FD0E0098F1B9 /* Debug */,

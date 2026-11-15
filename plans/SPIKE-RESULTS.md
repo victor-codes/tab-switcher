@@ -1,4 +1,4 @@
-# TabFlip spike results (Phase 0)
+# Tab Switcher spike results (Phase 0)
 
 Status: **spike complete** (runs of 2026-11-13 08:26 and 08:34 UTC, macOS 27.2, Safari 27.2). The table and sections S1–S11 below describe run 1; the "Run 2" section near the end supersedes S1, S4 and S5. Phase 1 is released. Items still marked **unverified** are secondary and move to the QA matrix.
 

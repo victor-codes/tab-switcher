@@ -1,4 +1,4 @@
-// TabFlip core/session.js. Owner: Agent 1.
+// Tab Switcher core/session.js. Owner: Agent 1.
 //
 // The switch-session state machine (one hold-and-tap gesture). Pure reducer:
 //   step(session, event, ctx) -> { session, effects }
@@ -23,7 +23,7 @@
 //   { type: "activated", windowId, tabId }        tabs.onActivated / onCreated(active)
 //   { type: "focusChanged", windowId }            windows.onFocusChanged
 //   { type: "external", reason }                  tab removed / attached / detached / replaced, window closed
-//   { type: "release" }                           the TabFlip app saw the held modifier let go
+//   { type: "release" }                           the Tab Switcher app saw the held modifier let go
 //
 // Effects:
 //   { type: "show", tabId, order, selectedIndex, modifiers, token, ackTimeoutMs }  send switcher:show, then
@@ -123,7 +123,7 @@ function startSession(event, ctx) {
     order,
     index,
     modifiers,
-    // From the TabFlip app, which watches the real keyboard state and reports the release:
+    // From the Tab Switcher app, which watches the real keyboard state and reports the release:
     // the page's own idea of which keys are held is then ignored (a tab that was just
     // switched to has usually not seen the modifier go down, or has no focus yet).
     trusted: event.trusted === true,
@@ -235,7 +235,7 @@ function cancel(session, event) {
 }
 
 /**
- * The held modifier was let go (reported by the TabFlip app, which sees it even when the
+ * The held modifier was let go (reported by the Tab Switcher app, which sees it even when the
  * page doesn't have focus). Overlay: commit to the selection. Fallback: done now, no need
  * to wait for the idle timer. Pending: remember it for when the ack arrives.
  */

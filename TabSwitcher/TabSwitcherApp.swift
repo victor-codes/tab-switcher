@@ -1,11 +1,11 @@
 //
-//  TabFlipApp.swift
-//  TabFlip
+//  TabSwitcherApp.swift
+//  Tab Switcher
 //
-//  The app is where TabFlip is set up and configured, and it also claims the shortcuts
+//  The app is where Tab Switcher is set up and configured, and it also claims the shortcuts
 //  while Safari is in front (ShortcutAgent.swift). So it keeps running after its window
 //  closes: with the window open it has a Dock icon; closed, it has no icon at all (no
-//  Dock, no menu bar). It opens at login without showing the window. Opening TabFlip
+//  Dock, no menu bar). It opens at login without showing the window. Opening Tab Switcher
 //  again brings the window back.
 //
 
@@ -17,7 +17,7 @@ import SwiftUI
 let extensionBundleIdentifier = "com.example.tabflip.Extension"
 
 @main
-struct TabFlipApp: App {
+struct TabSwitcherApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
@@ -29,7 +29,7 @@ struct TabFlipApp: App {
         .commands {
             // Single window, no document model: drop File > New.
             CommandGroup(replacing: .newItem) {}
-            // ⌘Q closes the window; TabFlip keeps running so the shortcuts keep working.
+            // ⌘Q closes the window; Tab Switcher keeps running so the shortcuts keep working.
             CommandGroup(replacing: .appTermination) {
                 Button("Close Window") { AppDelegate.closeWindows() }
                     .keyboardShortcut("q")
@@ -55,7 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Opening TabFlip while it runs in the background shows the window again.
+    /// Opening Tab Switcher while it runs in the background shows the window again.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate()
@@ -88,7 +88,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// True when macOS opened TabFlip as a login item rather than the user opening it.
+    /// True when macOS opened Tab Switcher as a login item rather than the user opening it.
     private var launchedAtLogin: Bool {
         guard let event = NSAppleEventManager.shared().currentAppleEvent else { return false }
         return event.eventID == kAEOpenApplication

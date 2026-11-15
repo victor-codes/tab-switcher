@@ -44,8 +44,8 @@ BUILD_NUMBER="$(git rev-list --count HEAD)"
 
 if [[ -n "${NOTARY_PROFILE:-}" ]]; then
   echo "==> Archiving (Developer ID)"
-  xcodebuild -project TabFlip.xcodeproj -scheme TabFlip -configuration Release -destination "generic/platform=macOS" \
-    -archivePath "$OUT/TabFlip.xcarchive" \
+  xcodebuild -project TabSwitcher.xcodeproj -scheme TabSwitcher -configuration Release -destination "generic/platform=macOS" \
+    -archivePath "$OUT/Tab Switcher.xcarchive" \
     MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
     archive -quiet
   cat > "$OUT/ExportOptions.plist" <<'PLIST'
@@ -58,7 +58,7 @@ if [[ -n "${NOTARY_PROFILE:-}" ]]; then
 </dict>
 </plist>
 PLIST
-  xcodebuild -exportArchive -archivePath "$OUT/TabFlip.xcarchive" \
+  xcodebuild -exportArchive -archivePath "$OUT/Tab Switcher.xcarchive" \
     -exportOptionsPlist "$OUT/ExportOptions.plist" -exportPath "$OUT/export" -quiet
   APP="$OUT/export/$APP_NAME"
 
@@ -69,7 +69,7 @@ PLIST
   rm "$OUT/notarize.zip"
 else
   echo "==> Building Release (Apple Development signing, not notarized)"
-  xcodebuild -project TabFlip.xcodeproj -scheme TabFlip -configuration Release -destination "generic/platform=macOS" \
+  xcodebuild -project TabSwitcher.xcodeproj -scheme TabSwitcher -configuration Release -destination "generic/platform=macOS" \
     -derivedDataPath "$OUT/DerivedData" \
     MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
     build -quiet

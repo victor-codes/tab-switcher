@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  TabFlip switcher harness (dev only, not in manifest).
+  Tab Switcher harness (dev only, not in manifest).
   Loads switcher.js in an ordinary tab with a fake `browser` API and a fake
   background, so the overlay can be exercised without Safari.
 
@@ -24,7 +24,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TabFlip switcher harness</title>
+<title>Tab Switcher harness</title>
 <!-- A page icon, so page:meta exercises the icon -> 32 px data URL conversion. -->
 <link rel="icon" sizes="64x64" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' rx='14' fill='%23e8590c'/%3E%3C/svg%3E">
 <script>
@@ -52,7 +52,7 @@
   html.t { transform: translateY(40px) scale(0.9); filter: saturate(1.2); }
   html.hostile div, html.hostile span, html.hostile img { all: unset !important; color: red !important; font-size: 30px !important; }
   html.hostile * { z-index: 2147483647 !important; position: relative; }
-  html.hostile tabflip-switcher { display: none !important; opacity: 0 !important; }
+  html.hostile tab-switcher { display: none !important; opacity: 0 !important; }
 </style>
 <script>
   // ---------------------------------------------------------------------------
@@ -119,7 +119,7 @@
       i18n: { getMessage: function () { return ""; } },
     };
 
-    window.__tabflipTestHook = function (api) { window.__tabflip = api; };
+    window.__tabSwitcherTestHook = function (api) { window.__tabSwitcher = api; };
 
     function summarize(msg) {
       if (msg.type !== "switcher:show") return JSON.stringify(msg);
@@ -174,7 +174,7 @@
       ctrlUp: function () { return key("keyup", "Control", false); },
       key: function (k, shift) { var p = key("keydown", k, true, shift); key("keyup", k, true, shift); return p; },
       setNoFocus: function (v) { noFocus = !!v; },
-      state: function () { return { bg: bg.session && { index: bg.session.index, mode: bg.session.mode }, active: bg.active, content: window.__tabflip && window.__tabflip.state() }; },
+      state: function () { return { bg: bg.session && { index: bg.session.index, mode: bg.session.mode }, active: bg.active, content: window.__tabSwitcher && window.__tabSwitcher.state() }; },
       clearLog: function () { logLines.length = 0; log("log cleared"); },
     };
 
@@ -256,7 +256,7 @@
 <script src="switcher.js"></script>
 </head>
 <body>
-  <h1>TabFlip switcher harness</h1>
+  <h1>Tab Switcher harness</h1>
   <p>Active fake tab: <span id="tab">1</span>. Hold <b>Control</b> and tap <b>Q</b> to browse; release to commit; Esc cancels; arrows move.</p>
 
   <fieldset>
