@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Build Tab Switcher, zip it, and update the Homebrew cask.
+# Build Tab Switcher, package it as a zip (for Homebrew) and a DMG (for the website), and
+# update the Homebrew cask.
 #
 #   tools/release.sh 1.0.1             build + zip + update cask locally (nothing pushed)
 #   tools/release.sh 1.0.1 --publish   also tag, create the GitHub release, and push the tap
@@ -26,6 +27,7 @@ REPO="victor-codes/tab-switcher"
 APP_NAME="Tab Switcher.app"
 OUT="$ROOT/build/release"
 ZIP="$OUT/TabSwitcher-$VERSION.zip"
+DMG="$OUT/TabSwitcher-$VERSION.dmg"
 TAG="v$VERSION"
 
 cd "$ROOT"
@@ -78,13 +80,30 @@ fi
 
 codesign --verify --deep --strict "$APP"
 
+LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+
 echo "==> Zipping"
 ditto -c -k --keepParent "$APP" "$ZIP"
 SHA="$(shasum -a 256 "$ZIP" | awk '{print $1}')"
 
+echo "==> Making DMG"
+# The usual drag-to-install window: the app next to a link to /Applications.
+STAGE="$OUT/dmg"
+mkdir -p "$STAGE"
+ditto "$APP" "$STAGE/$APP_NAME"
+ln -s /Applications "$STAGE/Applications"
+hdiutil create -volname "Tab Switcher" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG" -quiet
+"$LSREGISTER" -u "$STAGE/$APP_NAME" >/dev/null 2>&1 || true
+rm -rf "$STAGE"
+if [[ -n "${NOTARY_PROFILE:-}" ]]; then
+  echo "==> Notarizing DMG"
+  codesign --sign "Developer ID Application" --timestamp "$DMG"
+  xcrun notarytool submit "$DMG" --keychain-profile "$NOTARY_PROFILE" --wait
+  xcrun stapler staple "$DMG"
+fi
+
 # The built app must not stay on disk: macOS registers it, and Safari then lists a second
 # Tab Switcher extension next to the installed one.
-LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 "$LSREGISTER" -u "$APP" >/dev/null 2>&1 || true
 rm -rf "$OUT/DerivedData" "$OUT/export" "$OUT/Tab Switcher.xcarchive"
 
@@ -96,13 +115,14 @@ sed -i '' -E \
 
 echo
 echo "zip:    $ZIP"
+echo "dmg:    $DMG"
 echo "sha256: $SHA"
 
 if (( PUBLISH )); then
   echo "==> Publishing $TAG"
   git tag -a "$TAG" -m "Tab Switcher $VERSION"
   git push origin "$TAG"
-  gh release create "$TAG" "$ZIP" --repo "$REPO" --title "Tab Switcher $VERSION" --generate-notes
+  gh release create "$TAG" "$ZIP" "$DMG" --repo "$REPO" --title "Tab Switcher $VERSION" --generate-notes
   git -C "$TAP_DIR" add Casks/tab-switcher.rb
   git -C "$TAP_DIR" commit -m "tab-switcher $VERSION"
   git -C "$TAP_DIR" push

@@ -21,7 +21,7 @@ brew install --cask tab-switcher
 
 `brew upgrade --cask tab-switcher` gets new versions; `brew uninstall --cask tab-switcher` removes it.
 
-Without Homebrew, download `TabSwitcher-<version>.zip` from the [latest release](https://github.com/victor-codes/tab-switcher/releases/latest), unzip it, and move **Tab Switcher** to Applications.
+Without Homebrew, download `TabSwitcher-<version>.dmg` from the [latest release](https://github.com/victor-codes/tab-switcher/releases/latest), open it, and drag **Tab Switcher** onto the Applications folder.
 
 ### First launch
 
@@ -41,7 +41,7 @@ Then follow [Setting it up](#setting-it-up).
 
 ## Releasing
 
-`tools/release.sh <version>` builds the app, zips it and updates the cask in a [homebrew-tap](https://github.com/victor-codes/homebrew-tap) checkout next to this repo. Add `--publish` to tag the version, create the GitHub release and push the tap. Set `NOTARY_PROFILE` to a `notarytool` keychain profile to sign with Developer ID and notarize (needs a paid Apple Developer account).
+`tools/release.sh <version>` builds the app, packages it as a zip (used by the cask) and a DMG (for direct download), and updates the cask in a [homebrew-tap](https://github.com/victor-codes/homebrew-tap) checkout next to this repo. Add `--publish` to tag the version, create the GitHub release and push the tap. Set `NOTARY_PROFILE` to a `notarytool` keychain profile to sign the app and the DMG with Developer ID and notarize both (needs a paid Apple Developer account).
 
 ## Build and run
 
