@@ -122,7 +122,10 @@ if (( PUBLISH )); then
   echo "==> Publishing $TAG"
   git tag -a "$TAG" -m "Tab Switcher $VERSION"
   git push origin "$TAG"
-  gh release create "$TAG" "$ZIP" "$DMG" --repo "$REPO" --title "Tab Switcher $VERSION" --generate-notes
+  # Also upload the DMG as TabSwitcher.dmg: the website links to
+  # releases/latest/download/TabSwitcher.dmg, which then always gets the newest version.
+  cp "$DMG" "$OUT/TabSwitcher.dmg"
+  gh release create "$TAG" "$ZIP" "$DMG" "$OUT/TabSwitcher.dmg" --repo "$REPO" --title "Tab Switcher $VERSION" --generate-notes
   git -C "$TAP_DIR" add Casks/tab-switcher.rb
   git -C "$TAP_DIR" commit -m "tab-switcher $VERSION"
   git -C "$TAP_DIR" push
