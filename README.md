@@ -25,7 +25,7 @@ Without Homebrew, download `TabSwitcher-<version>.zip` from the [latest release]
 
 ### First launch
 
-Releases are not notarized yet, so macOS and Safari need two extra steps:
+Releases are not notarized yet, so macOS and Safari need a few extra steps:
 
 1. If macOS says Tab Switcher can't be opened, clear the download flag and open it again:
 
@@ -33,7 +33,9 @@ Releases are not notarized yet, so macOS and Safari need two extra steps:
    xattr -dr com.apple.quarantine "/Applications/Tab Switcher.app"
    ```
 
-2. In Safari, turn on **Allow unsigned extensions** (see [Allowing an unsigned extension](#allowing-an-unsigned-extension-local-development) below). Safari turns this off each time it quits, so turn it on again after restarting Safari.
+2. If Safari was open while you installed or upgraded, quit it (⌘Q) and open it again. Until you do, the extension can't reach the app, and ⌃Tab falls back to the in-page switcher, which can't show on the Start Page or Safari's own pages.
+
+3. In Safari, turn on **Allow unsigned extensions** (see [Allowing an unsigned extension](#allowing-an-unsigned-extension-local-development) below). Safari turns this off each time it quits, so turn it on again after restarting Safari.
 
 Then follow [Setting it up](#setting-it-up).
 
