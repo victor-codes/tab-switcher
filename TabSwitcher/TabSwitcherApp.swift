@@ -14,7 +14,7 @@ import Carbon.HIToolbox
 import SwiftUI
 
 /// Bundle identifier of the embedded Safari Web Extension.
-let extensionBundleIdentifier = "com.example.tabflip.Extension"
+let extensionBundleIdentifier = "xyz.ayovictor.tabswitcher.Extension"
 
 @main
 struct TabSwitcherApp: App {

@@ -66,7 +66,7 @@ let idleTimer = null;
 /**
  * Diagnostics: a short line in the Mac's log (through the app's native handler, which
  * writes it with os_log), so a problem can be read afterwards with
- *   log show --last 10m --predicate 'subsystem == "com.example.tabflip"'
+ *   log show --last 10m --predicate 'subsystem == "xyz.ayovictor.tabswitcher"'
  * Only event names, counts and timings: never a URL, title or anything from a page.
  */
 const INSTANCE = Math.random().toString(36).slice(2, 6);

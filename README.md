@@ -49,7 +49,7 @@ Then follow [Setting it up](#setting-it-up).
    xcodebuild -project TabSwitcher.xcodeproj -scheme TabSwitcher -configuration Debug build
    ```
 
-   The project is signed with a free Apple ID "Personal Team" (`DEVELOPMENT_TEAM` in the project). A team is required: the app and the extension share settings through an App Group (`$(TeamIdentifierPrefix)tabflip`), and Xcode will not build App Group entitlements without one. To use your own team, change the team in Signing & Capabilities for both targets. Shipping to other people (App Store or notarized download) needs a paid Apple Developer Program membership.
+   The project is signed with a free Apple ID "Personal Team" (`DEVELOPMENT_TEAM` in the project). A team is required: the app and the extension share settings through an App Group (`$(TeamIdentifierPrefix)tabswitcher`), and Xcode will not build App Group entitlements without one. To use your own team, change the team in Signing & Capabilities for both targets. Shipping to other people (App Store or notarized download) needs a paid Apple Developer Program membership.
 2. Run the **TabSwitcher** scheme from Xcode, or open the built `Tab Switcher.app` (Xcode shows its location under Product › Show Build Folder in Finder). The app is where Tab Switcher is set up and configured.
 
 ### Allowing an unsigned extension (local development)

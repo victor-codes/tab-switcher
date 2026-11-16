@@ -16,14 +16,13 @@ to Tab Switcher (`e11c2f4`), both on `main`.
 - `tools/release.sh` may have uncommitted edits by the user, and `site/` is the user's
   untracked folder. Do not edit, commit, stash or delete either.
 
-### Names that must NOT change
+### Identifiers
 
-These still say `tabflip` on purpose. Changing any of them breaks existing installs (Safari
-permission, saved settings, login item):
+Renamed from the `com.example.tabflip` placeholders in plan 07:
 
-- bundle identifiers `com.example.tabflip` and `com.example.tabflip.Extension`
-- App Group `$(TeamIdentifierPrefix)tabflip` (Info.plist key `TabSwitcherAppGroup`)
-- log subsystem `com.example.tabflip`
+- bundle identifiers `xyz.ayovictor.tabswitcher` and `xyz.ayovictor.tabswitcher.Extension`
+- App Group `$(TeamIdentifierPrefix)tabswitcher` (Info.plist key `TabSwitcherAppGroup`)
+- log subsystem `xyz.ayovictor.tabswitcher`
 
 ### Commands
 
@@ -71,7 +70,7 @@ rm -rf "$DD"
   `{ type: "log", what, data }` through `browser.runtime.sendNativeMessage`; the handler
   (`TabSwitcher Extension/SafariWebExtensionHandler.swift`) writes it to the system log.
   Read it with:
-  `/usr/bin/log show --last 10m --info --predicate 'subsystem == "com.example.tabflip"' --style compact`
+  `/usr/bin/log show --last 10m --info --predicate 'subsystem == "xyz.ayovictor.tabswitcher"' --style compact`
   (call `/usr/bin/log` by full path; zsh has its own `log`). Log event names, counts and
   timings only. Never log titles, hosts or URLs.
 - **In-page delivery.** `perform()` in `background.js` shows the in-page switcher with
@@ -168,7 +167,7 @@ App side (`SnapshotStore`):
 - **Extension → app (snapshots):** `browser.runtime.sendNativeMessage` with
   `{ type: "snapshot:push", snapshot }` reaches `SafariWebExtensionHandler`, which forwards
   the bytes to the app over a `CFMessagePort` named `<App Group>.panel` (for example
-  `4V436AF4L4.tabflip.panel`). In memory only, nothing written to disk. Spike: allowed in
+  `4V436AF4L4.tabswitcher.panel`). In memory only, nothing written to disk. Spike: allowed in
   the sandbox for both targets with no entitlement change; 8 MB delivered with no limit hit;
   400 KB reaches the app in about 6 ms. When the app is not running,
   `CFMessagePortCreateRemote` returns nil at once: reply `{ delivered: false }` and carry on.

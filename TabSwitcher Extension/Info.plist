@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>TabSwitcherAppGroup</key>
-	<string>$(TeamIdentifierPrefix)tabflip</string>
+	<string>$(TeamIdentifierPrefix)tabswitcher</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>

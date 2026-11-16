@@ -28,7 +28,7 @@ import Carbon.HIToolbox
 import os
 import SafariServices
 
-private let log = Logger(subsystem: "com.example.tabflip", category: "hotkeys")
+private let log = Logger(subsystem: "xyz.ayovictor.tabswitcher", category: "hotkeys")
 
 /// Browsers the shortcuts are claimed in.
 private let safariBundleIDs: Set<String> = ["com.apple.Safari", "com.apple.SafariTechnologyPreview"]

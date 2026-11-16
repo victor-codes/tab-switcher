@@ -454,7 +454,7 @@
 					"-framework",
 					SafariServices,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.tabflip.Extension;
+				PRODUCT_BUNDLE_IDENTIFIER = xyz.ayovictor.tabswitcher.Extension;
 				PRODUCT_NAME = "Tab Switcher Extension";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -491,7 +491,7 @@
 					"-framework",
 					SafariServices,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.tabflip.Extension;
+				PRODUCT_BUNDLE_IDENTIFIER = xyz.ayovictor.tabswitcher.Extension;
 				PRODUCT_NAME = "Tab Switcher Extension";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -532,7 +532,7 @@
 					"-framework",
 					Carbon,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.tabflip;
+				PRODUCT_BUNDLE_IDENTIFIER = xyz.ayovictor.tabswitcher;
 				PRODUCT_MODULE_NAME = TabSwitcher;
 				PRODUCT_NAME = "Tab Switcher";
 				REGISTER_APP_GROUPS = YES;
@@ -575,7 +575,7 @@
 					"-framework",
 					Carbon,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.tabflip;
+				PRODUCT_BUNDLE_IDENTIFIER = xyz.ayovictor.tabswitcher;
 				PRODUCT_MODULE_NAME = TabSwitcher;
 				PRODUCT_NAME = "Tab Switcher";
 				REGISTER_APP_GROUPS = YES;

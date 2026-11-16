@@ -262,7 +262,7 @@ Expected results per condition. "As normal" = same as the *Normal site* row.
 
 Build installed 2026-11-15 from `main`. "Panel" = the switcher drawn by the app above
 Safari; "in-page" = the old switcher inside the page. Check the log for each run with
-`/usr/bin/log show --last 5m --info --predicate 'subsystem == "com.example.tabflip"' --style compact`
+`/usr/bin/log show --last 5m --info --predicate 'subsystem == "xyz.ayovictor.tabswitcher"' --style compact`
 (lines `snapshot items=… kept=…` in the app, `snapshot {…}` from the extension).
 
 | # | Check | Expected | Result |

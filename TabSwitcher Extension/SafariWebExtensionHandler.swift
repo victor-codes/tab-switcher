@@ -13,7 +13,7 @@
 import SafariServices
 import os
 
-private let diagLog = Logger(subsystem: "com.example.tabflip", category: "extension")
+private let diagLog = Logger(subsystem: "xyz.ayovictor.tabswitcher", category: "extension")
 
 class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
 

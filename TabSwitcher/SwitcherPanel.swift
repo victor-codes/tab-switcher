@@ -14,7 +14,7 @@ import AppKit
 import os
 import SwiftUI
 
-private let log = Logger(subsystem: "com.example.tabflip", category: "panel")
+private let log = Logger(subsystem: "xyz.ayovictor.tabswitcher", category: "panel")
 
 /// Clicks reach a window that is not key only if the view accepts the first mouse.
 /// The panel is never key and Safari stays the active app, so pointer moves come from a
