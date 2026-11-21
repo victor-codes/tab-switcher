@@ -158,21 +158,37 @@
   }
 
   /**
-   * Columns for n cards: at most 5, fewer when the viewport cannot fit 150 px cards
-   * (16 px gutters + 10 px panel padding each side, 4 px gaps). Rows are then
+   * Panel and card sizes. The card padding is the selection plate around each thumbnail;
+   * a card is its thumbnail plus that padding, so a full-size card (200 px) has a 176 px
+   * thumbnail. TabSwitcher/SwitcherView.swift has the same constants and must match.
+   */
+  const PANEL_PAD = 16;
+  const CARD_PAD = 12;
+  const CARD_PAD_BOTTOM = 12;
+  const CARD_RADIUS = 16;
+  const PANEL_RADIUS = 28;
+  const GAP = 4;
+  const CHROME = 2 * 16 + 2 * PANEL_PAD; // gutters + panel padding, both sides
+  const CARD_FIT = 134 + 2 * CARD_PAD; // 134 px thumbnail
+  const CARD_MAX = 200;
+  const CARD_MIN = 84 + 2 * CARD_PAD; // 84 px thumbnail
+
+  /**
+   * Columns for n cards: at most 5, fewer when the viewport cannot fit cards with a 134 px
+   * thumbnail (16 px gutters + the panel padding each side, 4 px gaps). Rows are then
    * balanced, so 8 tabs lay out 4 + 4 rather than 5 + 3.
    */
   function columnsFor(n, viewportWidth) {
     if (!(n > 0)) return 1;
-    const fit = Math.max(1, Math.floor((viewportWidth - 52 + 4) / (150 + 4)));
+    const fit = Math.max(1, Math.floor((viewportWidth - CHROME + GAP) / (CARD_FIT + GAP)));
     const max = Math.min(n, 5, fit);
     return Math.ceil(n / Math.ceil(n / max));
   }
 
-  /** Card width for `cols` columns: 196 px, shrinking to fit narrow viewports. */
+  /** Card width for `cols` columns: 200 px, shrinking to fit narrow viewports. */
   function cardWidthFor(cols, viewportWidth) {
-    const avail = viewportWidth - 52 - (cols - 1) * 4;
-    return Math.max(100, Math.min(196, Math.floor(avail / Math.max(1, cols))));
+    const avail = viewportWidth - CHROME - (cols - 1) * GAP;
+    return Math.max(CARD_MIN, Math.min(CARD_MAX, Math.floor(avail / Math.max(1, cols))));
   }
 
   const pure = { normalizeModifiers, wrapIndex, columnsFor, cardWidthFor, readShortcuts: (r) => readShortcuts(r), safePreview, safeIcon, iconSource, sanitizeItem, largestSize, iconScore, pickIcon };
@@ -500,13 +516,13 @@
   }
 }
 /* Panel: one thick material layer floating over the page. Radius is concentric with
-   the cards inside it (card radius 14 + panel padding 10 = 24). */
+   the cards inside it. */
 .panel {
   pointer-events: auto;
   max-width: 100%; max-height: 100%;
   display: flex;
-  padding: 10px;
-  border-radius: 24px;
+  padding: ${PANEL_PAD}px;
+  border-radius: ${PANEL_RADIUS}px;
   background: var(--panel);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
   backdrop-filter: blur(40px) saturate(180%);
@@ -531,22 +547,22 @@
 .list {
   /* Flex rows so a short last row (7 tabs -> 4 + 3) sits centered under the full one. */
   display: flex; flex-wrap: wrap; justify-content: center;
-  width: calc(var(--cols, 1) * var(--cw, 196px) + (var(--cols, 1) - 1) * 4px);
+  width: calc(var(--cols, 1) * var(--cw, ${CARD_MAX}px) + (var(--cols, 1) - 1) * 4px);
   max-width: 100%;
   gap: 4px;
   margin: 0;
   overflow: auto;
-  max-height: calc(100vh - 52px);
+  max-height: calc(100vh - ${CHROME}px);
   overscroll-behavior: contain;
   scrollbar-width: thin;
 }
 /* The selection is a single soft plate behind the card. No hover state: the
    pointer moves the selection itself, so there is only ever one highlight. */
 .card {
-  flex: 0 0 var(--cw, 196px);
+  flex: 0 0 var(--cw, ${CARD_MAX}px);
   min-width: 0;
-  padding: 8px 8px 7px;
-  border-radius: 14px;
+  padding: ${CARD_PAD}px ${CARD_PAD}px ${CARD_PAD_BOTTOM}px;
+  border-radius: ${CARD_RADIUS}px;
 }
 .card.sel { background: var(--plate); }
 .thumb {

@@ -14,35 +14,44 @@ import SwiftUI
 // MARK: - Layout (extension/content/switcher.js: columnsFor, cardWidthFor)
 
 enum SwitcherLayout {
-    /// Columns for n cards: at most 5, fewer when the viewport cannot fit 150 px cards
-    /// (16 px gutters + 10 px panel padding each side, 4 px gaps). Rows are then
+    /// Panel and card sizes, the same constants as switcher.js. The card padding is the
+    /// selection plate around each thumbnail; a card is its thumbnail plus that padding, so
+    /// a full-size card (200 px) has a 176 px thumbnail.
+    static let panelPadding = 16.0
+    static let cardPadding = 12.0
+    static let cardPaddingBottom = 12.0
+    static let cardRadius = 16.0
+    static let panelRadius = 28.0
+    static let gap = 4.0
+    /// .list max-height is calc(100vh - CHROME): 16 px gutters + the panel padding, twice.
+    static let chrome = 2 * 16 + 2 * panelPadding
+    static let cardFit = 134 + 2 * cardPadding
+    static let cardMax = 200.0
+    static let cardMin = 84 + 2 * cardPadding
+
+    /// Columns for n cards: at most 5, fewer when the viewport cannot fit cards with a 134 px
+    /// thumbnail (16 px gutters + the panel padding each side, 4 px gaps). Rows are then
     /// balanced, so 8 tabs lay out 4 + 4 rather than 5 + 3.
     static func columnsFor(_ n: Int, _ viewportWidth: Double) -> Int {
         if !(n > 0) { return 1 }
-        let fit = max(1, Int(floor((viewportWidth - 52 + 4) / (150 + 4))))
+        let fit = max(1, Int(floor((viewportWidth - chrome + gap) / (cardFit + gap))))
         let maxCols = min(n, 5, fit)
         return Int(ceil(Double(n) / ceil(Double(n) / Double(maxCols))))
     }
 
-    /// Card width for `cols` columns: 196 px, shrinking to fit narrow viewports.
+    /// Card width for `cols` columns: 200 px, shrinking to fit narrow viewports.
     static func cardWidthFor(_ cols: Int, _ viewportWidth: Double) -> Double {
-        let avail = viewportWidth - 52 - Double(cols - 1) * 4
-        return max(100, min(196, floor(avail / Double(max(1, cols)))))
+        let avail = viewportWidth - chrome - Double(cols - 1) * gap
+        return max(cardMin, min(cardMax, floor(avail / Double(max(1, cols)))))
     }
 
-    static let gap = 4.0
-    static let panelPadding = 10.0
-    static let panelRadius = 24.0
-    static let cardRadius = 14.0
     static let thumbRadius = 8.0
-    /// .list max-height is calc(100vh - 52px): 16 px gutters + 10 px panel padding, twice.
-    static let chrome = 52.0
     /// The title row's line height: 13 px × 1.3.
     static let lineHeight = 13.0 * 1.3
 
-    /// Height of one card: padding 8 / 7, a 16:10 thumbnail, and the row (margin 9 above, 2 below).
+    /// Height of one card: the card padding, a 16:10 thumbnail, and the row (margin 9 above, 2 below).
     static func cardHeight(cardWidth: Double) -> Double {
-        8 + (cardWidth - 16) * 10 / 16 + 9 + max(16, lineHeight) + 2 + 7
+        cardPadding + (cardWidth - 2 * cardPadding) * 10 / 16 + 9 + max(16, lineHeight) + 2 + cardPaddingBottom
     }
 
     struct Metrics: Equatable {
@@ -282,7 +291,7 @@ struct SwitcherCard: View {
     let preview: NSImage?
     let icon: NSImage?
 
-    private var thumbWidth: Double { width - 16 }
+    private var thumbWidth: Double { width - 2 * SwitcherLayout.cardPadding }
     private var label: String {
         if !item.title.isEmpty { return item.title }
         if !item.host.isEmpty { return item.host }
@@ -311,7 +320,8 @@ struct SwitcherCard: View {
             .padding(.top, 9)
             .padding(.bottom, 2)
         }
-        .padding(EdgeInsets(top: 8, leading: 8, bottom: 7, trailing: 8))
+        .padding(EdgeInsets(top: SwitcherLayout.cardPadding, leading: SwitcherLayout.cardPadding,
+                            bottom: SwitcherLayout.cardPaddingBottom, trailing: SwitcherLayout.cardPadding))
         // Exactly the height the panel was sized for (SwitcherLayout.cardHeight), whatever
         // the text measures, so the list never ends up a few px taller than its frame.
         .frame(width: width, height: SwitcherLayout.cardHeight(cardWidth: width), alignment: .topLeading)
@@ -357,10 +367,10 @@ struct SwitcherCard: View {
             .foregroundStyle(palette.fg)
             .lineLimit(1)
             .fixedSize(horizontal: true, vertical: false)
-            // An exact box (card minus its 8 px padding each side, the 16 px icon and the 6 px
-            // gap): the text keeps its natural width inside it and is cut at the edge, so a long
+            // An exact box (card minus its padding each side, the 16 px icon and the 6 px gap):
+            // the text keeps its natural width inside it and is cut at the edge, so a long
             // title can never widen the row past the card.
-            .frame(width: max(0, width - 16 - 16 - 6), height: SwitcherLayout.lineHeight, alignment: .leading)
+            .frame(width: max(0, width - 2 * SwitcherLayout.cardPadding - 16 - 6), height: SwitcherLayout.lineHeight, alignment: .leading)
             .clipped()
             .mask {
                 HStack(spacing: 0) {
