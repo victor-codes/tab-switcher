@@ -680,8 +680,42 @@ function onWindowRemoved(windowId) {
   });
 }
 
+/**
+ * Tell the app which browser window has focus: its id, or null when none does (Safari's
+ * Settings window and other non-browser windows, or another app in front). While it is
+ * null the app lets go of the shortcuts, so they do nothing there. `bounds` (screen
+ * points, top-left origin, or null) lets the panel find that window on screen rather
+ * than centring on whichever Safari window is listed first, such as an open Settings window.
+ */
+function pushFocus(windowId) {
+  if (typeof api.runtime.sendNativeMessage !== "function") return;
+  const id = isId(windowId) ? windowId : null;
+  sendChain = sendChain.then(async () => {
+    let bounds = null;
+    if (id !== null && typeof api.windows.get === "function") {
+      try {
+        const w = await api.windows.get(id);
+        if ([w?.left, w?.top, w?.width, w?.height].every(Number.isFinite)) {
+          bounds = { x: w.left, y: w.top, width: w.width, height: w.height };
+        }
+      } catch {
+        /* no bounds: the panel centres on the front Safari window */
+      }
+    }
+    let delivered = false;
+    try {
+      const reply = await api.runtime.sendNativeMessage("application.id", { type: "focus:push", windowId: id, bounds });
+      delivered = reply?.delivered === true;
+    } catch {
+      /* the app is not running: nothing to tell */
+    }
+    diag("focus", { w: id, bounds, delivered });
+  });
+}
+
 function onFocusChanged(windowId) {
   job((state) => reduce(state, { type: "focusChanged", windowId }));
+  pushFocus(windowId);
   // Coming back to Safari, often straight from the Tab Switcher app: pick up new settings.
   if (windowId !== api.windows.WINDOW_ID_NONE && windowId !== -1) {
     // The window that was focused is not any more: its last push must not count as "same".

@@ -39,6 +39,10 @@ final class ShortcutAgent: NSObject {
     private let snapshotPort = SnapshotPort()
     private var session = PanelSession()
     private lazy var panel = SwitcherPanel()
+    /// False while Safari is in front but none of its browser windows has focus (its Settings
+    /// window, for one), as the extension reports. The shortcuts are let go then, so they
+    /// do nothing and Safari gets the keys. True until the extension says otherwise.
+    private var browserWindowFocused = true
     private lazy var releaseWatch = ReleaseWatch(
         onRelease: { [weak self] in self?.run(.release) },
         onTimeout: { [weak self] in self?.run(.timeout) })
@@ -63,6 +67,7 @@ final class ShortcutAgent: NSObject {
                                                name: .panelSnapshotsForget, object: nil)
         update(frontmost: NSWorkspace.shared.frontmostApplication)
         snapshotPort.onSnapshot = { [weak self] snapshot in self?.receive(snapshot) }
+        snapshotPort.onFocus = { [weak self] windowId, bounds in self?.focusChanged(windowId, bounds: bounds) }
         snapshotPort.listen()
         // Anything the extension pushed before the port was listening was lost: ask again.
         requestSnapshots()
@@ -84,13 +89,26 @@ final class ShortcutAgent: NSObject {
         panel.prime(snapshot.items)
     }
 
+    /// The extension's report of which browser window has focus (nil: none) and where it is.
+    private func focusChanged(_ windowId: Int?, bounds: CGRect?) {
+        if windowId != nil { panel.focusedWindowBounds = bounds }
+        let focused = windowId != nil
+        guard focused != browserWindowFocused else { return }
+        browserWindowFocused = focused
+        log.info("browser window focused: \(focused, privacy: .public)")
+        update(frontmost: NSWorkspace.shared.frontmostApplication)
+    }
+
     @objc private func appActivated(_ note: Notification) {
         update(frontmost: note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)
     }
 
     @objc private func appTerminated(_ note: Notification) {
         let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-        if let id = app?.bundleIdentifier, safariBundleIDs.contains(id) { forgetSnapshots() }
+        if let id = app?.bundleIdentifier, safariBundleIDs.contains(id) {
+            browserWindowFocused = true
+            forgetSnapshots()
+        }
     }
 
     /// Safari quit, "Clear…" was used, or the panel was turned off (rule 6).
@@ -102,7 +120,7 @@ final class ShortcutAgent: NSObject {
 
     private func update(frontmost: NSRunningApplication?) {
         log.info("frontmost: \(frontmost?.bundleIdentifier ?? "none", privacy: .public)")
-        if let id = frontmost?.bundleIdentifier, safariBundleIDs.contains(id) {
+        if let id = frontmost?.bundleIdentifier, safariBundleIDs.contains(id), browserWindowFocused {
             let settings = loadSettings()
             hotKeys.register(settings.shortcuts)
             if settings.panel, snapshots.current == nil { requestSnapshots() }
@@ -197,12 +215,22 @@ final class ShortcutAgent: NSObject {
 /// The App Sandbox allows a port named under the App Group (plans/SPIKE-PANEL.md).
 final class SnapshotPort {
     var onSnapshot: ((PanelSnapshot) -> Void)?
+    /// A browser window got focus (its id and bounds, if known), or none has it (nil).
+    var onFocus: ((Int?, CGRect?) -> Void)?
     private var port: CFMessagePort?
     static let snapshotMessageID: Int32 = 1
 
     private struct Message: Decodable {
         var type: String
-        var snapshot: PanelSnapshot
+        var snapshot: PanelSnapshot?
+        var windowId: Int?
+        var bounds: Bounds?
+    }
+
+    /// Screen points, top-left origin (as CGWindowList reports window bounds).
+    private struct Bounds: Decodable {
+        var x, y, width, height: Double
+        var rect: CGRect { CGRect(x: x, y: y, width: width, height: height) }
     }
 
     func listen() {
@@ -230,11 +258,15 @@ final class SnapshotPort {
     }
 
     private func handle(_ data: Data) {
-        guard let message = try? JSONDecoder().decode(Message.self, from: data), message.type == "snapshot:push" else {
+        guard let message = try? JSONDecoder().decode(Message.self, from: data) else {
             log.error("snapshot port: unreadable message (\(data.count, privacy: .public) bytes)")
             return
         }
-        onSnapshot?(message.snapshot)
+        switch message.type {
+        case "snapshot:push" where message.snapshot != nil: onSnapshot?(message.snapshot!)
+        case "focus:push": onFocus?(message.windowId, message.bounds?.rect)
+        default: log.error("snapshot port: unknown message \(message.type, privacy: .public)")
+        }
     }
 }
 

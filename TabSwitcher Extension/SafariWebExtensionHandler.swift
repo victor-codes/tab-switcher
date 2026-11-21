@@ -7,7 +7,8 @@
 //  Group, as { settings: {...} | null, clearToken: String | null }. Read-only: the app is
 //  the only writer. `{ type: "snapshot:push", snapshot }` is forwarded to the running app
 //  over a CFMessagePort named "<App Group>.panel" (in memory only); the reply is
-//  { delivered: Bool }, false when the app is not running. `log` writes to the system log.
+//  { delivered: Bool }, false when the app is not running. `{ type: "focus:push", windowId }`
+//  (null when no browser window has focus) goes the same way. `log` writes to the system log.
 //
 
 import SafariServices
@@ -31,7 +32,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                 reply["settings"] = NSNull()
             }
             reply["clearToken"] = shared?.string(forKey: SharedSettings.clearTokenKey) ?? NSNull()
-        } else if message?["type"] as? String == "snapshot:push" {
+        } else if message?["type"] as? String == "snapshot:push" || message?["type"] as? String == "focus:push" {
             reply["delivered"] = PanelPort.send(message ?? [:])
         } else if message?["type"] as? String == "log" {
             // Diagnostics from the background (event names, counts, timings; nothing from a page).

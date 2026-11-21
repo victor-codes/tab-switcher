@@ -65,6 +65,9 @@ final class SwitcherPanel {
     private let panel: NSPanel
     private let host: PanelHostingView<SwitcherView>
     private(set) var isShown = false
+    /// Bounds of the browser window the extension last reported as focused (CG coordinates,
+    /// top-left origin), or nil. Used to pick that window over others Safari has open.
+    var focusedWindowBounds: CGRect?
 
     init() {
         panel = NonActivatingPanel(contentRect: NSRect(x: 0, y: 0, width: 400, height: 200),
@@ -129,7 +132,7 @@ final class SwitcherPanel {
     }
 
     private func present(items: [PanelItem], selected: Int) {
-        let region = Self.safariFrontWindow() ?? Self.mouseScreenRegion()
+        let region = Self.safariWindow(near: focusedWindowBounds) ?? Self.mouseScreenRegion()
         model.viewport = region.size
         model.items = items
         model.selected = selected
@@ -146,27 +149,39 @@ final class SwitcherPanel {
 
     // MARK: Where to show it
 
-    /// Front Safari window's bounds in Cocoa coordinates, or nil. No permission is needed;
-    /// window titles are not returned, which is fine.
-    private static func safariFrontWindow() -> NSRect? {
+    /// The Safari window to centre on, in Cocoa coordinates, or nil. No permission is needed;
+    /// window titles are not returned, which is fine. Safari's other windows (its Settings
+    /// window, for one) can be listed ahead of the browser window that has focus, so the one
+    /// matching `focused` (the extension's bounds for it) wins: same frame, else same size and
+    /// x (Safari's `top` does not match CG's y on every display), else same size (the window
+    /// was moved since), else the front Safari window as before.
+    private static func safariWindow(near focused: CGRect?) -> NSRect? {
         guard let safari = NSWorkspace.shared.frontmostApplication,
               safari.bundleIdentifier?.hasPrefix("com.apple.Safari") == true,
               let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
                 as? [[String: Any]]
         else { return nil }
         let pid = safari.processIdentifier
-        for window in list {
+        let windows: [CGRect] = list.compactMap { window in
             guard (window[kCGWindowOwnerPID as String] as? Int32) == pid,
                   (window[kCGWindowLayer as String] as? Int) == 0,
                   let dict = window[kCGWindowBounds as String] as? [String: Any],
                   let r = CGRect(dictionaryRepresentation: dict as CFDictionary),
                   r.width > 200, r.height > 200
-            else { continue }
-            // CG is top-left origin on the primary screen; Cocoa is bottom-left.
-            let primaryHeight = NSScreen.screens.first?.frame.height ?? 0
-            return NSRect(x: r.minX, y: primaryHeight - (r.minY + r.height), width: r.width, height: r.height)
+            else { return nil }
+            return r
         }
-        return nil
+        let close = { (a: CGFloat, b: CGFloat) in abs(a - b) <= 4 }
+        let sameSize = { (r: CGRect, f: CGRect) in close(r.width, f.width) && close(r.height, f.height) }
+        let chosen = focused.flatMap { f in
+            windows.first { sameSize($0, f) && close($0.minX, f.minX) && close($0.minY, f.minY) }
+                ?? windows.first { sameSize($0, f) && close($0.minX, f.minX) }
+                ?? windows.first { sameSize($0, f) }
+        } ?? windows.first
+        guard let r = chosen else { return nil }
+        // CG is top-left origin on the primary screen; Cocoa is bottom-left.
+        let primaryHeight = NSScreen.screens.first?.frame.height ?? 0
+        return NSRect(x: r.minX, y: primaryHeight - (r.minY + r.height), width: r.width, height: r.height)
     }
 
     /// Fallback: the visible area of the screen that has the mouse.

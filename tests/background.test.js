@@ -69,7 +69,7 @@ function fakeBrowser({ tabs, content = {}, sessionData = {}, localData = {}, app
       onStartup: event(),
       onInstalled: event(),
       onMessage: event(),
-      ...(app ? { sendNativeMessage: async (_id, msg) => (msg?.type === "log" ? ((app.logs ??= []).push(msg), { ok: true }) : msg?.type === "snapshot:push" ? ((app.pushes ??= []).push(msg.snapshot), { delivered: app.deliver !== false }) : (app.calls.push(msg), app.reply())) } : {}),
+      ...(app ? { sendNativeMessage: async (_id, msg) => (msg?.type === "log" ? ((app.logs ??= []).push(msg), { ok: true }) : msg?.type === "snapshot:push" ? ((app.pushes ??= []).push(msg.snapshot), { delivered: app.deliver !== false }) : msg?.type === "focus:push" ? ((app.focus ??= []).push({ w: msg.windowId, bounds: msg.bounds }), { delivered: true }) : (app.calls.push(msg), app.reply())) } : {}),
       connectNative(id) {
         b._ports.push(id);
         return b._helper;
@@ -590,6 +590,25 @@ test("settings from the app are copied into storage.local on start and when Safa
   assert.equal(s.overlay, false);
   assert.equal(s.maxItems, 5);
   assert.equal(s.shortcuts.next.code, "Tab");
+});
+
+test("focus changes are passed to the app: the window id and bounds, or null when no browser window has focus", async () => {
+  const app = { calls: [], settings: null, clearToken: null };
+  app.reply = () => ({ settings: app.settings, clearToken: app.clearToken });
+  const b = fakeBrowser({ tabs: threeTabs(), app });
+  b.windows.get = async (id) => ({ id, left: 10, top: 20, width: 1200, height: 800 });
+  const { settle } = await boot(b);
+  await settle();
+  b.windows.onFocusChanged.fire(-1); // Safari's Settings window, or another app
+  await settle();
+  await sleep(5);
+  b.windows.onFocusChanged.fire(1);
+  await settle();
+  await sleep(5);
+  assert.deepEqual(app.focus, [
+    { w: null, bounds: null },
+    { w: 1, bounds: { x: 10, y: 20, width: 1200, height: 800 } },
+  ]);
 });
 
 test("a new clear token from the app wipes icons and is remembered", async () => {
