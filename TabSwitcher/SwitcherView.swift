@@ -17,11 +17,16 @@ enum SwitcherLayout {
     /// Panel and card sizes, the same constants as switcher.js. The card padding is the
     /// selection plate around each thumbnail; a card is its thumbnail plus that padding, so
     /// a full-size card (200 px) has a 176 px thumbnail.
-    static let panelPadding = 16.0
+    static let panelPadding = 14.0
     static let cardPadding = 12.0
     static let cardPaddingBottom = 12.0
-    static let cardRadius = 16.0
-    static let panelRadius = 28.0
+    /// Corners are smoothed (continuous, like switcher.js's corner-shape), which reads tighter
+    /// than a plain arc, so each outer radius steps up by less than the full padding:
+    /// thumbnail 8, card 18, panel 26.
+    static let cardRadius = 18.0
+    /// Thumbnail height over width (14:9), the same as .thumb's aspect-ratio in switcher.js.
+    static let thumbAspect = 9.0 / 14.0
+    static let panelRadius = 26.0
     static let gap = 4.0
     /// .list max-height is calc(100vh - CHROME): 16 px gutters + the panel padding, twice.
     static let chrome = 2 * 16 + 2 * panelPadding
@@ -49,9 +54,9 @@ enum SwitcherLayout {
     /// The title row's line height: 13 px × 1.3.
     static let lineHeight = 13.0 * 1.3
 
-    /// Height of one card: the card padding, a 16:10 thumbnail, and the row (margin 9 above, 2 below).
+    /// Height of one card: the card padding, a 14:9 thumbnail, and the row (margin 9 above, 2 below).
     static func cardHeight(cardWidth: Double) -> Double {
-        cardPadding + (cardWidth - 2 * cardPadding) * 10 / 16 + 9 + max(16, lineHeight) + 2 + cardPaddingBottom
+        cardPadding + (cardWidth - 2 * cardPadding) * thumbAspect + 9 + max(16, lineHeight) + 2 + cardPaddingBottom
     }
 
     struct Metrics: Equatable {
@@ -210,10 +215,10 @@ struct SwitcherView: View {
         .background(Background(solid: solid, palette: palette))
         .overlay {
             if moreContrast {
-                RoundedRectangle(cornerRadius: SwitcherLayout.panelRadius).strokeBorder(palette.fg, lineWidth: 1)
+                RoundedRectangle(cornerRadius: SwitcherLayout.panelRadius, style: .continuous).strokeBorder(palette.fg, lineWidth: 1)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: SwitcherLayout.panelRadius))
+        .clipShape(RoundedRectangle(cornerRadius: SwitcherLayout.panelRadius, style: .continuous))
         .frame(width: m.panelSize.width, height: m.panelSize.height)
         .coordinateSpace(name: Self.space)
         .onPreferenceChange(CardFrames.self) { frames in model.cardFrames = frames }
@@ -311,7 +316,7 @@ struct SwitcherCard: View {
                 if let icon {
                     Image(nsImage: icon).resizable().interpolation(.high)
                         .frame(width: 16, height: 16)
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                 } else {
                     glyph(size: 16, font: 9)
                 }
@@ -325,10 +330,10 @@ struct SwitcherCard: View {
         // Exactly the height the panel was sized for (SwitcherLayout.cardHeight), whatever
         // the text measures, so the list never ends up a few px taller than its frame.
         .frame(width: width, height: SwitcherLayout.cardHeight(cardWidth: width), alignment: .topLeading)
-        .background(RoundedRectangle(cornerRadius: SwitcherLayout.cardRadius).fill(selected ? palette.plate : .clear))
+        .background(RoundedRectangle(cornerRadius: SwitcherLayout.cardRadius, style: .continuous).fill(selected ? palette.plate : .clear))
         .overlay {
             if selected && moreContrast {
-                RoundedRectangle(cornerRadius: SwitcherLayout.cardRadius).strokeBorder(palette.fg, lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: SwitcherLayout.cardRadius, style: .continuous).strokeBorder(palette.fg, lineWidth: 1.5)
             }
         }
         .accessibilityElement(children: .ignore)
@@ -342,19 +347,19 @@ struct SwitcherCard: View {
             if let preview {
                 // object-fit: cover, object-position: top center
                 Image(nsImage: preview).resizable().interpolation(.high).scaledToFill()
-                    .frame(width: thumbWidth, height: thumbWidth * 10 / 16, alignment: .top)
+                    .frame(width: thumbWidth, height: thumbWidth * SwitcherLayout.thumbAspect, alignment: .top)
                     .clipped()
             } else if let icon {
                 Image(nsImage: icon).resizable().interpolation(.high)
                     .frame(width: 32, height: 32)
-                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
             } else {
                 glyph(size: 40, font: 18, tracking: -0.01 * 18)
             }
         }
-        .frame(width: thumbWidth, height: thumbWidth * 10 / 16)
-        .clipShape(RoundedRectangle(cornerRadius: SwitcherLayout.thumbRadius))
-        .overlay(RoundedRectangle(cornerRadius: SwitcherLayout.thumbRadius)
+        .frame(width: thumbWidth, height: thumbWidth * SwitcherLayout.thumbAspect)
+        .clipShape(RoundedRectangle(cornerRadius: SwitcherLayout.thumbRadius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: SwitcherLayout.thumbRadius, style: .continuous)
             .strokeBorder(moreContrast ? palette.fg2 : palette.thumbEdge, lineWidth: 0.5))
         .shadow(color: .black.opacity(0.08), radius: 1.5, x: 0, y: 1)
     }

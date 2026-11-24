@@ -81,9 +81,9 @@ test("normalizeIndex, keys and data URL checks", () => {
   assert.equal(isPreviewDataUrl("data:text/html;base64,AAAA"), false);
 });
 
-test("cropRect keeps the top 16:10 and never upscales", () => {
+test("cropRect keeps the top 14:9 and never upscales", () => {
   assert.deepEqual(cropRect(2071, 1047, 480), { sx: 0, sy: 0, sw: 2071, sh: 1047, dw: 480, dh: 243 });
-  assert.deepEqual(cropRect(1600, 2000, 480), { sx: 0, sy: 0, sw: 1600, sh: 1000, dw: 480, dh: 300 });
+  assert.deepEqual(cropRect(1600, 2000, 480), { sx: 0, sy: 0, sw: 1600, sh: 1029, dw: 480, dh: 309 });
   assert.deepEqual(cropRect(300, 100, 480), { sx: 0, sy: 0, sw: 300, sh: 100, dw: 300, dh: 100 });
 });
 

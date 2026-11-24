@@ -162,11 +162,15 @@
    * a card is its thumbnail plus that padding, so a full-size card (200 px) has a 176 px
    * thumbnail. TabSwitcher/SwitcherView.swift has the same constants and must match.
    */
-  const PANEL_PAD = 16;
+  const PANEL_PAD = 14;
   const CARD_PAD = 12;
   const CARD_PAD_BOTTOM = 12;
-  const CARD_RADIUS = 16;
-  const PANEL_RADIUS = 28;
+  const THUMB_RADIUS = 8;
+  // Smoothed corners (corner-shape below, SwiftUI's .continuous natively) read tighter than a
+  // plain arc, so each outer radius steps up by less than the full padding.
+  const CARD_RADIUS = 18;
+  const PANEL_RADIUS = 26;
+  const CORNER_SHAPE = "superellipse(1.5)";
   const GAP = 4;
   const CHROME = 2 * 16 + 2 * PANEL_PAD; // gutters + panel padding, both sides
   const CARD_FIT = 134 + 2 * CARD_PAD; // 134 px thumbnail
@@ -523,6 +527,7 @@
   display: flex;
   padding: ${PANEL_PAD}px;
   border-radius: ${PANEL_RADIUS}px;
+  corner-shape: ${CORNER_SHAPE};
   background: var(--panel);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
   backdrop-filter: blur(40px) saturate(180%);
@@ -563,12 +568,14 @@
   min-width: 0;
   padding: ${CARD_PAD}px ${CARD_PAD}px ${CARD_PAD_BOTTOM}px;
   border-radius: ${CARD_RADIUS}px;
+  corner-shape: ${CORNER_SHAPE};
 }
 .card.sel { background: var(--plate); }
 .thumb {
   position: relative;
-  aspect-ratio: 16 / 10;
-  border-radius: 8px;
+  aspect-ratio: 14 / 9;
+  border-radius: ${THUMB_RADIUS}px;
+  corner-shape: ${CORNER_SHAPE};
   overflow: hidden;
   background: var(--thumb);
   display: flex; align-items: center; justify-content: center;
@@ -580,7 +587,7 @@
   object-fit: cover; object-position: top center;
   display: block;
 }
-.thumb > .big { width: 32px; height: 32px; display: block; border-radius: 7px; }
+.thumb > .big { width: 32px; height: 32px; display: block; border-radius: 7px; corner-shape: ${CORNER_SHAPE}; }
 .glyph {
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%;
@@ -590,7 +597,7 @@
 }
 .thumb > .glyph { width: 40px; height: 40px; font-size: 18px; letter-spacing: -0.01em; }
 .row { display: flex; align-items: center; gap: 6px; margin: 9px 0 2px; min-width: 0; }
-.row > .ico { width: 16px; height: 16px; flex: 0 0 16px; display: block; border-radius: 4px; }
+.row > .ico { width: 16px; height: 16px; flex: 0 0 16px; display: block; border-radius: 4px; corner-shape: ${CORNER_SHAPE}; }
 .row > .glyph { width: 16px; height: 16px; flex: 0 0 16px; font-size: 9px; }
 .title {
   flex: 1 1 auto; min-width: 0;

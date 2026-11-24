@@ -27,8 +27,8 @@ export const SETTLE_MS = 600;
 export const SESSION_RETRY_MS = 1200;
 export const SESSION_RETRIES = 3;
 export const PREVIEW_WIDTH = 480;
-/** The overlay shows previews at 16:10, top-aligned; anything below that is never seen. */
-export const PREVIEW_ASPECT = 10 / 16;
+/** The overlay shows previews at 14:9, top-aligned; anything below that is never seen. */
+export const PREVIEW_ASPECT = 9 / 14;
 export const PREVIEW_QUALITY = 0.6;
 /** Largest stored preview (characters of the data URL); larger results are dropped. */
 export const MAX_PREVIEW_CHARS = 200 * 1024;
@@ -110,7 +110,7 @@ export function pruneIndex(index, liveIds) {
 }
 
 /**
- * Source and destination rectangles for the downscale: keep the top 16:10 of the capture
+ * Source and destination rectangles for the downscale: keep the top 14:9 of the capture
  * (what the overlay shows), scaled to `width` (never upscaled).
  */
 export function cropRect(srcW, srcH, width = PREVIEW_WIDTH, aspect = PREVIEW_ASPECT) {
