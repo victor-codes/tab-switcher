@@ -40,6 +40,9 @@
   const ICON_PX = 32;
   const ICON_MAX_CHARS = 8192;
   const ICON_WAIT_MS = 3000;
+  /** How long the keys must stay down before the overlay appears: a quick tap-and-release
+   *  switches tabs without drawing it (the app's panel uses the same delay). */
+  const SHOW_DELAY_MS = 150;
   const MODIFIER_ALIASES = {
     control: "Control",
     ctrl: "Control",
@@ -402,6 +405,7 @@
   /** Forget the session; modifiers we only assumed were held are no longer known to be. */
   function dropSession() {
     if (session && session.assumed) for (const m of session.modifiers) held.delete(m);
+    if (session && session.showTimer) clearTimeout(session.showTimer);
     session = null;
     removeOverlay();
   }
@@ -427,13 +431,20 @@
     dropSession();
     const items = Array.isArray(msg.items) ? msg.items.map(sanitizeItem) : [];
     if ((assumed || hasFocus) && modifiersHeld && items.length) {
-      session = { items, index: wrapIndex(msg.selectedIndex, items.length), modifiers, assumed };
-      try {
-        render(); // same task as the reply: no timers, no animation
-      } catch (e) {
-        // Rendering failed (hostile page). Key tracking still commits on release.
-        removeOverlay();
-      }
+      const s = { items, index: wrapIndex(msg.selectedIndex, items.length), modifiers, assumed, showTimer: 0 };
+      session = s;
+      // Draw only if the keys are still down after SHOW_DELAY_MS; a release before then
+      // commits through finish() and the overlay never appears.
+      s.showTimer = setTimeout(() => {
+        s.showTimer = 0;
+        if (session !== s) return;
+        try {
+          render();
+        } catch (e) {
+          // Rendering failed (hostile page). Key tracking still commits on release.
+          removeOverlay();
+        }
+      }, SHOW_DELAY_MS);
     }
     return { ok: true, hasFocus, modifiersHeld, shown: !!session };
   }

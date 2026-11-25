@@ -65,6 +65,11 @@ final class SwitcherPanel {
     private let panel: NSPanel
     private let host: PanelHostingView<SwitcherView>
     private(set) var isShown = false
+    /// How long the keys must stay down before the panel appears. A quick ⌃Tab tap-and-release
+    /// flips to the previous tab without the panel ever drawing (like ⌘Tab in macOS).
+    static let showDelay: TimeInterval = 0.15
+    /// A show waiting out `showDelay`; a release before it fires cancels it.
+    private var pending: (items: [PanelItem], selected: Int, work: DispatchWorkItem)?
     /// Bounds of the browser window the extension last reported as focused (CG coordinates,
     /// top-left origin), or nil. Used to pick that window over others Safari has open.
     var focusedWindowBounds: CGRect?
@@ -117,15 +122,24 @@ final class SwitcherPanel {
     }
 
     func show(items: [PanelItem], selected: Int) {
-        present(items: items, selected: selected)
+        pending?.work.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, let p = self.pending else { return }
+            self.pending = nil
+            self.present(items: p.items, selected: p.selected)
+        }
+        pending = (items, selected, work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.showDelay, execute: work)
     }
 
     func select(_ index: Int) {
+        if pending != nil { pending?.selected = index; return }
         guard isShown else { return }
         model.selected = index
     }
 
     func hide() {
+        if let p = pending { p.work.cancel(); pending = nil }
         guard isShown else { return }
         panel.orderOut(nil)
         isShown = false
